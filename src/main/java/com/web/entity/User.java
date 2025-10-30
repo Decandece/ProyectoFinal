@@ -4,15 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
-@Setter
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 public class User {
 
     @Id
@@ -22,31 +22,55 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false , length = 150 , unique = true)
+    @Column(nullable = false, length = 150, unique = true)
     private String email;
 
-    @Column(nullable = false , length = 20)
+    @Column(length = 20)
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false , length = 20)
+    @Column(nullable = false, length = 20)
     private Role role;
 
-    @Column(name = "password",nullable = false , length = 20)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(nullable = false , length = 20)
-    private String status = "ACTIVE";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Status status = Status.ACTIVE;
 
-    @Column(name = "created_at" ,  nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public enum Role{
+    // Relaciones
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<SeatHold> seatHolds;
+
+    @OneToMany(mappedBy = "passenger", cascade = CascadeType.ALL)
+    private List<Ticket> tickets;
+
+    @OneToMany(mappedBy = "driver")
+    private List<Assignment> driverAssignments;
+
+    @OneToMany(mappedBy = "dispatcher")
+    private List<Assignment> dispatcherAssignments;
+
+    @OneToMany(mappedBy = "reportedBy")
+    private List<Incident> reportedIncidents;
+
+    public enum Role {
         PASSENGER,
         CLERK,
         DRIVER,
         DISPATCHER,
         ADMIN
+    }
+
+    public enum Status {
+        ACTIVE,
+        INACTIVE
     }
 
 
