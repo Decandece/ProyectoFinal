@@ -43,7 +43,8 @@ public class SeatHold {
 
     public enum HoldStatus {
         HOLD,
-        EXPIRED
+        EXPIRED,
+        SOLD
     }
 }
 
