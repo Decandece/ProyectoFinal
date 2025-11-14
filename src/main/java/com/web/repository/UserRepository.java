@@ -18,6 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Buscar usuarios por rol
     List<User> findByRole(User.Role role);
 
+    // Buscar usuarios por rol y estado
+    List<User> findByRoleAndStatus(User.Role role, User.Status status);
+
     // Buscar conductores activos disponibles para asignación
     @Query("""
         SELECT u FROM User u

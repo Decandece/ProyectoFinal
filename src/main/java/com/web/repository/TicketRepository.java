@@ -41,6 +41,19 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         @Param("toStopOrder") Integer toStopOrder
     );
 
+    // Verificar si un asiento está disponible para TODO el viaje (para SeatHold)
+    @Query("""
+        SELECT CASE WHEN COUNT(t) = 0 THEN true ELSE false END
+        FROM Ticket t
+        WHERE t.trip.id = :tripId
+        AND t.seatNumber = :seatNumber
+        AND t.status = 'SOLD'
+    """)
+    Boolean isSeatAvailableForFullTrip(
+        @Param("tripId") Long tripId,
+        @Param("seatNumber") Integer seatNumber
+    );
+
     // Verificar si un asiento está disponible para un tramo específico - CASO DE USO 1
     @Query("""
         SELECT CASE WHEN COUNT(t) = 0 THEN true ELSE false END
@@ -93,6 +106,21 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         @Param("now") LocalDateTime now
     );
 
+    // Buscar tickets CASH en rango de tiempo (para cierre de caja)
+    @Query("""
+        SELECT t FROM Ticket t
+        WHERE t.passenger.id = :userId
+        AND t.paymentMethod = 'CASH'
+        AND t.status = 'SOLD'
+        AND t.trip.departureTime BETWEEN :startTime AND :endTime
+        ORDER BY t.trip.departureTime
+    """)
+    List<Ticket> findCashTicketsInTimeRange(
+        @Param("userId") Long userId,
+        @Param("startTime") LocalDateTime startTime,
+        @Param("endTime") LocalDateTime endTime
+    );
+
     // Métricas: Calcular ingresos por rango de fechas
     @Query("""
         SELECT SUM(t.price)
@@ -118,6 +146,27 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         @Param("endDate") LocalDate endDate
     );
 
+    // Métricas: Contar tickets vendidos en rango de fechas
+    @Query("""
+        SELECT COUNT(t)
+        FROM Ticket t
+        WHERE t.status = 'SOLD'
+        AND t.trip.tripDate BETWEEN :startDate AND :endDate
+    """)
+    Long countSoldTicketsInRange(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+
+    // Métricas: Calcular ingresos por viaje
+    @Query("""
+        SELECT SUM(t.price)
+        FROM Ticket t
+        WHERE t.trip.id = :tripId
+        AND t.status = 'SOLD'
+    """)
+    BigDecimal calculateRevenueByTrip(@Param("tripId") Long tripId);
+
     // Métricas: Contar cancelaciones
     @Query("""
         SELECT COUNT(t)
@@ -125,7 +174,24 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         WHERE t.status = 'CANCELLED'
         AND t.trip.tripDate BETWEEN :startDate AND :endDate
     """)
-    Long countCancellations(
+    Long countCancellationsInRange(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+
+    // Alias para countCancellationsInRange (backward compatibility)
+    default Long countCancellations(LocalDate startDate, LocalDate endDate) {
+        return countCancellationsInRange(startDate, endDate);
+    }
+
+    // Métricas: Contar NO_SHOW en rango de fechas
+    @Query("""
+        SELECT COUNT(t)
+        FROM Ticket t
+        WHERE t.status = 'NO_SHOW'
+        AND t.trip.tripDate BETWEEN :startDate AND :endDate
+    """)
+    Long countNoShowsInRange(
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );

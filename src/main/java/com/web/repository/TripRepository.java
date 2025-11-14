@@ -18,6 +18,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     // Buscar viajes por ruta, fecha y estado específico
     List<Trip> findByRouteIdAndTripDateAndStatus(Long routeId, LocalDate tripDate, Trip.TripStatus status);
 
+    // Contar viajes futuros de una ruta
+    long countByRouteIdAndTripDateAfter(Long routeId, LocalDate date);
+
     // Buscar viajes por estado
     List<Trip> findByStatus(Trip.TripStatus status);
 

@@ -29,6 +29,16 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
     // Buscar encomiendas por teléfono del destinatario
     List<Parcel> findByReceiverPhone(String receiverPhone);
 
+    // Buscar encomiendas por rango de fechas
+    @Query("""
+        SELECT p FROM Parcel p
+        WHERE p.trip.tripDate BETWEEN :startDate AND :endDate
+    """)
+    List<Parcel> findByDateRange(
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+
     // Buscar encomiendas en tránsito de un viaje
     @Query("""
         SELECT p FROM Parcel p

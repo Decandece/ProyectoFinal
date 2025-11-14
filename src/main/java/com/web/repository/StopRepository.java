@@ -15,6 +15,9 @@ public interface StopRepository extends JpaRepository<Stop, Long> {
     // Validar si una parada pertenece a una ruta
     boolean existsByIdAndRouteId(Long stopId, Long routeId);
 
+    // Validar order único dentro de una ruta
+    boolean existsByRouteIdAndOrder(Long routeId, Integer order);
+
     // Obtener el orden de una parada para validación de tramos
     @Query("""
         SELECT s.order FROM Stop s
