@@ -10,6 +10,23 @@ public record ConfigUpdateRequest(
     Integer overbookingPercentage,
     Map<String, Integer> discountPercentages,  // "STUDENT": 20, etc
     BigDecimal baggageWeightLimit,
-    BigDecimal baggagePricePerKg
+    BigDecimal baggagePricePerKg,
+    
+    // Configuraciones adicionales
+    BigDecimal noShowFee,  // Para actualizar "no.show.fee"
+    Double overbookingMaxPercentage,  // Para actualizar "overbooking.max.percentage"
+    
+    // Políticas de Reembolso
+    BigDecimal refundPercentage48Hours,
+    BigDecimal refundPercentage24Hours,
+    BigDecimal refundPercentage12Hours,
+    BigDecimal refundPercentage6Hours,
+    BigDecimal refundPercentageLess6Hours,
+    
+    // Precios de Tickets
+    BigDecimal ticketBasePrice,
+    BigDecimal ticketPriceMultiplierPeakHours,
+    BigDecimal ticketPriceMultiplierHighDemand,
+    BigDecimal ticketPriceMultiplierMediumDemand
 ) implements Serializable {}
 

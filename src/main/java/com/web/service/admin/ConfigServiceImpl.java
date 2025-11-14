@@ -34,6 +34,10 @@ public class ConfigServiceImpl implements ConfigService {
         BigDecimal baggageWeightLimit = getDecimalConfig("baggage.weight.limit", BigDecimal.valueOf(23.0));
         BigDecimal baggagePricePerKg = getDecimalConfig("baggage.price.per.kg", BigDecimal.valueOf(5000));
 
+        // Configuraciones adicionales
+        BigDecimal noShowFee = getNoShowFee();
+        Double overbookingMaxPercentage = getOverbookingMaxPercentage();
+
         // Políticas de Reembolso
         BigDecimal refund48Hours = getRefundPercentage48Hours();
         BigDecimal refund24Hours = getRefundPercentage24Hours();
@@ -59,6 +63,8 @@ public class ConfigServiceImpl implements ConfigService {
                 discounts,
                 baggageWeightLimit,
                 baggagePricePerKg,
+                noShowFee,
+                overbookingMaxPercentage,
                 refund48Hours,
                 refund24Hours,
                 refund12Hours,
@@ -95,6 +101,15 @@ public class ConfigServiceImpl implements ConfigService {
 
         if (request.baggagePricePerKg() != null) {
             updateConfigValue("baggage.price.per.kg", String.valueOf(request.baggagePricePerKg()), admin);
+        }
+
+        // Configuraciones adicionales
+        if (request.noShowFee() != null) {
+            updateConfigValue("no.show.fee", String.valueOf(request.noShowFee()), admin);
+        }
+
+        if (request.overbookingMaxPercentage() != null) {
+            updateConfigValue("overbooking.max.percentage", String.valueOf(request.overbookingMaxPercentage()), admin);
         }
 
         // Políticas de Reembolso
