@@ -11,7 +11,6 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ActiveProfiles("test")
 public abstract class BaseRepositoryTest {
 
     @Container
@@ -23,4 +22,3 @@ public abstract class BaseRepositoryTest {
 
     // Los tests heredan automáticamente esta configuración
 }
-
