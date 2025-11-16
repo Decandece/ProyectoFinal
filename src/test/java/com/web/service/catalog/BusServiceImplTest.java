@@ -1,0 +1,167 @@
+package com.web.service.catalog;
+
+import com.web.dto.catalog.Bus.BusCreateRequest;
+import com.web.dto.catalog.Bus.BusResponse;
+import com.web.dto.catalog.Bus.BusUpdateRequest;
+import com.web.dto.catalog.Bus.mapper.BusMapper;
+import com.web.entity.Bus;
+import com.web.exception.BusinessException;
+import com.web.exception.ResourceNotFoundException;
+import com.web.repository.BusRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+
+@ExtendWith(MockitoExtension.class)
+class BusServiceImplTest {
+
+    @Mock
+    private BusRepository busRepository;
+    @Mock
+    private BusMapper busMapper;
+
+    @InjectMocks
+    private BusServiceImpl busService;
+
+    private Bus bus;
+    private BusResponse busResponse;
+
+    @BeforeEach
+    void setUp() {
+        bus = Bus.builder()
+                .id(1L)
+                .plate("ABC123")
+                .capacity(40)
+                .status(Bus.BusStatus.ACTIVE)
+                .build();
+
+        busResponse = new BusResponse(
+                1L, "ABC123", 40, null, Bus.BusStatus.ACTIVE
+        );
+    }
+
+    @Test
+    void shouldCreateBus_WithValidRequest_ReturnBusResponse() {
+        // Given
+        BusCreateRequest request = new BusCreateRequest(
+                "ABC123", 40, null
+        );
+
+        when(busRepository.findByPlate("ABC123")).thenReturn(Optional.empty());
+        when(busMapper.toEntity(request)).thenReturn(bus);
+        when(busRepository.save(any(Bus.class))).thenAnswer(inv -> {
+            Bus b = inv.getArgument(0);
+            b.setId(1L);
+            return b;
+        });
+        when(busMapper.toResponse(any(Bus.class))).thenReturn(busResponse);
+
+        // When
+        BusResponse result = busService.createBus(request);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(1L);
+        verify(busRepository).findByPlate("ABC123");
+        verify(busRepository).save(any(Bus.class));
+    }
+
+    @Test
+    void shouldGetAllBuses_ReturnBusList() {
+        // Given
+        List<Bus> buses = List.of(bus);
+        List<BusResponse> responses = List.of(busResponse);
+
+        when(busRepository.findAll()).thenReturn(buses);
+        when(busMapper.toResponseList(buses)).thenReturn(responses);
+
+        // When
+        List<BusResponse> result = busService.getAllBuses();
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+        verify(busRepository).findAll();
+    }
+
+    @Test
+    void shouldGetBusById_WithValidId_ReturnBusResponse() {
+        // Given
+        when(busRepository.findById(1L)).thenReturn(Optional.of(bus));
+        when(busMapper.toResponse(bus)).thenReturn(busResponse);
+
+        // When
+        BusResponse result = busService.getBusById(1L);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(1L);
+        verify(busRepository).findById(1L);
+    }
+
+    @Test
+    void shouldUpdateBus_WithValidRequest_UpdateBus() {
+        // Given
+        BusUpdateRequest request = new BusUpdateRequest(
+                45, null, Bus.BusStatus.ACTIVE
+        );
+
+        when(busRepository.findById(1L)).thenReturn(Optional.of(bus));
+        when(busRepository.save(any(Bus.class))).thenReturn(bus);
+        when(busMapper.toResponse(any(Bus.class))).thenReturn(busResponse);
+
+        // When
+        BusResponse result = busService.updateBus(1L, request);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(busMapper).updateEntityFromRequest(request, bus);
+        verify(busRepository).save(bus);
+    }
+
+    @Test
+    void shouldDeleteBus_WithValidId_DeleteBus() {
+        // Given
+        when(busRepository.findById(1L)).thenReturn(Optional.of(bus));
+        when(busRepository.save(any(Bus.class))).thenReturn(bus);
+
+        // When
+        busService.deleteBus(1L);
+
+        // Then
+        verify(busRepository).save(argThat(b -> 
+            b.getStatus() == Bus.BusStatus.MAINTENANCE
+        ));
+    }
+
+    @Test
+    void shouldGetAvailableBuses_WithDate_ReturnAvailableList() {
+        // Given
+        List<Bus> buses = List.of(bus);
+        List<BusResponse> responses = List.of(busResponse);
+
+        when(busRepository.findAll()).thenReturn(buses);
+        when(busMapper.toResponseList(anyList())).thenReturn(responses);
+
+        // When
+        List<BusResponse> result = busService.getAvailableBuses(LocalDate.now());
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+        verify(busRepository).findAll();
+    }
+}
+
