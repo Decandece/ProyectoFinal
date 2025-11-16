@@ -94,6 +94,21 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         @Param("stopOrder") Integer stopOrder
     );
 
+    // Obtener tickets de un viaje para un tramo específico (para lista de pasajeros)
+    @Query("""
+        SELECT t FROM Ticket t
+        WHERE t.trip.id = :tripId
+        AND t.status = 'SOLD'
+        AND t.fromStop.id = :fromStopId
+        AND t.toStop.id = :toStopId
+        ORDER BY t.seatNumber
+    """)
+    List<Ticket> findTicketsBySegment(
+        @Param("tripId") Long tripId,
+        @Param("fromStopId") Long fromStopId,
+        @Param("toStopId") Long toStopId
+    );
+
     // Buscar tickets elegibles para cancelación (para política de reembolso)
     @Query("""
         SELECT t FROM Ticket t

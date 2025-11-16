@@ -80,7 +80,6 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
     );
 
     // Validar si un asiento tiene hold activo (para validación de tramos)
-    // Nota: SeatHold bloquea el asiento para TODO el viaje, independiente del tramo
     @Query("""
         SELECT h FROM SeatHold h
         WHERE h.trip.id = :tripId

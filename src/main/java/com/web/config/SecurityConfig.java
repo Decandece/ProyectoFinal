@@ -96,7 +96,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                // Aquí está la magia: reemplazamos las lambdas por referencias a métodos
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(this::handleAuthenticationError)
                         .accessDeniedHandler(this::handleAccessDeniedError)

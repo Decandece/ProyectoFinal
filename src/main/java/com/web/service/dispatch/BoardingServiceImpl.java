@@ -17,6 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+/**
+ * Servicio para gestionar el proceso de abordaje de viajes
+ * Controla transiciones de estado: SCHEDULED → BOARDING → IN_TRANSIT
+ */
 @Service
 @RequiredArgsConstructor
 public class BoardingServiceImpl implements BoardingService {
@@ -25,6 +29,7 @@ public class BoardingServiceImpl implements BoardingService {
     private final AssignmentRepository assignmentRepository;
     private final TripMapper tripMapper;
 
+    /** Inicia el proceso de abordaje cambiando estado a BOARDING */
     @Override
     @Transactional
     public TripResponse openBoarding(Long tripId) {
@@ -44,6 +49,7 @@ public class BoardingServiceImpl implements BoardingService {
         return tripMapper.toResponse(updatedTrip);
     }
 
+    /** Cierra el proceso de abordaje (mantiene estado BOARDING hasta partir) */
     @Override
     @Transactional
     public TripResponse closeBoarding(Long tripId) {
@@ -76,8 +82,17 @@ public class BoardingServiceImpl implements BoardingService {
         Assignment assignment = assignmentRepository.findByTripId(tripId)
                 .orElseThrow(() -> new BusinessException("El viaje no tiene asignación", HttpStatus.BAD_REQUEST, "NO_ASSIGNMENT"));
 
+        // Validar checklist completo: checklistOk, SOAT válido y revisión válida
         if (!assignment.getChecklistOk()) {
             throw new BusinessException("No se puede partir sin checklist aprobado", HttpStatus.BAD_REQUEST, "CHECKLIST_NOT_APPROVED");
+        }
+        
+        if (!assignment.getSoatValid()) {
+            throw new BusinessException("No se puede partir sin SOAT vigente", HttpStatus.BAD_REQUEST, "SOAT_NOT_VALID");
+        }
+        
+        if (!assignment.getRevisionValid()) {
+            throw new BusinessException("No se puede partir sin revisión técnica vigente", HttpStatus.BAD_REQUEST, "REVISION_NOT_VALID");
         }
 
         trip.setStatus(Trip.TripStatus.DEPARTED);

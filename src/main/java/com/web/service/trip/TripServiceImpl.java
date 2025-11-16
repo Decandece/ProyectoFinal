@@ -1,5 +1,7 @@
 package com.web.service.trip;
 
+import com.web.dto.ticket.TicketResponse;
+import com.web.dto.ticket.mapper.TicketMapper;
 import com.web.dto.trip.TripCreateRequest;
 import com.web.dto.trip.TripDetailResponse;
 import com.web.dto.trip.TripResponse;
@@ -27,156 +29,198 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 public class TripServiceImpl implements TripService {
 
-    private final TripRepository tripRepository;
-    private final RouteRepository routeRepository;
-    private final BusRepository busRepository;
-    private final StopRepository stopRepository;
-    private final TicketRepository ticketRepository;
-    private final TripMapper tripMapper;
+        private final TripRepository tripRepository;
+        private final RouteRepository routeRepository;
+        private final BusRepository busRepository;
+        private final StopRepository stopRepository;
+        private final TicketRepository ticketRepository;
+        private final TripMapper tripMapper;
+        private final TicketMapper ticketMapper;
 
-    @Override
-    @Transactional
-    public TripResponse createTrip(TripCreateRequest request) {
-        Route route = routeRepository.findById(request.routeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Ruta", request.routeId()));
+        // Crea un nuevo viaje validando que el bus esté disponible
+        @Override
+        @Transactional
+        public TripResponse createTrip(TripCreateRequest request) {
+                Route route = routeRepository.findById(request.routeId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Ruta", request.routeId()));
 
-        Bus bus = busRepository.findById(request.busId())
-                .orElseThrow(() -> new ResourceNotFoundException("Bus", request.busId()));
+                Bus bus = busRepository.findById(request.busId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Bus", request.busId()));
 
-        if (bus.getStatus() != Bus.BusStatus.ACTIVE) {
-            throw new BusinessException("El bus no está disponible", HttpStatus.BAD_REQUEST, "BUS_NOT_AVAILABLE");
+                if (bus.getStatus() != Bus.BusStatus.ACTIVE) {
+                        throw new BusinessException("El bus no está disponible", HttpStatus.BAD_REQUEST,
+                                        "BUS_NOT_AVAILABLE");
+                }
+
+                Trip trip = tripMapper.toEntity(request);
+                // Establecer las relaciones manualmente
+                trip.setRoute(route);
+                trip.setBus(bus);
+
+                Trip savedTrip = tripRepository.save(trip);
+
+                return tripMapper.toResponse(savedTrip);
         }
 
-        Trip trip = tripMapper.toEntity(request);
-        // Establecer las relaciones manualmente
-        trip.setRoute(route);
-        trip.setBus(bus);
-        
-        Trip savedTrip = tripRepository.save(trip);
+        // Busca viajes por ruta y/o fecha (filtros opcionales)
+        @Override
+        @Transactional(readOnly = true)
+        public List<TripResponse> searchTrips(Long routeId, LocalDate date) {
+                List<Trip> trips;
 
+                if (routeId != null && date != null) {
+                        trips = tripRepository.findByRouteIdAndTripDate(routeId, date);
+                } else if (routeId != null) {
+                        trips = tripRepository.findAll().stream()
+                                        .filter(t -> t.getRoute().getId().equals(routeId))
+                                        .toList();
+                } else if (date != null) {
+                        trips = tripRepository.findAll().stream()
+                                        .filter(t -> t.getTripDate().equals(date))
+                                        .toList();
+                } else {
+                        trips = tripRepository.findAll();
+                }
 
-        return tripMapper.toResponse(savedTrip);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<TripResponse> searchTrips(Long routeId, LocalDate date) {
-        List<Trip> trips;
-        
-        if (routeId != null && date != null) {
-            trips = tripRepository.findByRouteIdAndTripDate(routeId, date);
-        } else if (routeId != null) {
-            trips = tripRepository.findAll().stream()
-                    .filter(t -> t.getRoute().getId().equals(routeId))
-                    .toList();
-        } else if (date != null) {
-            trips = tripRepository.findAll().stream()
-                    .filter(t -> t.getTripDate().equals(date))
-                    .toList();
-        } else {
-            trips = tripRepository.findAll();
+                return tripMapper.toResponseList(trips);
         }
 
-        return tripMapper.toResponseList(trips);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public TripDetailResponse getTripById(Long id) {
-        Trip trip = tripRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
-        return tripMapper.toDetailResponse(trip);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SeatStatusResponse> getSeatAvailability(Long tripId, Long fromStopId, Long toStopId) {
-        Trip trip = tripRepository.findById(tripId)
-                .orElseThrow(() -> new ResourceNotFoundException("Viaje", tripId));
-
-        Stop fromStop = stopRepository.findById(fromStopId)
-                .orElseThrow(() -> new ResourceNotFoundException("Parada origen", fromStopId));
-
-        Stop toStop = stopRepository.findById(toStopId)
-                .orElseThrow(() -> new ResourceNotFoundException("Parada destino", toStopId));
-
-        if (!fromStop.getRoute().getId().equals(trip.getRoute().getId()) ||
-            !toStop.getRoute().getId().equals(trip.getRoute().getId())) {
-            throw new BusinessException("Las paradas no pertenecen a la ruta del viaje", HttpStatus.BAD_REQUEST, "INVALID_STOPS");
+        // Obtiene los detalles completos de un viaje por su ID
+        @Override
+        @Transactional(readOnly = true)
+        public TripDetailResponse getTripById(Long id) {
+                Trip trip = tripRepository.findByIdWithDetails(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
+                return tripMapper.toDetailResponse(trip);
         }
 
-        if (fromStop.getOrder() >= toStop.getOrder()) {
-            throw new BusinessException("La parada de origen debe ser anterior a la de destino", HttpStatus.BAD_REQUEST, "INVALID_SEGMENT");
+        // Obtiene el estado de disponibilidad de todos los asientos para un tramo
+        // específico
+        @Override
+        @Transactional(readOnly = true)
+        public List<SeatStatusResponse> getSeatAvailability(Long tripId, Long fromStopId, Long toStopId) {
+                Trip trip = tripRepository.findById(tripId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Viaje", tripId));
+
+                Stop fromStop = stopRepository.findById(fromStopId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Parada origen", fromStopId));
+
+                Stop toStop = stopRepository.findById(toStopId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Parada destino", toStopId));
+
+                if (!fromStop.getRoute().getId().equals(trip.getRoute().getId()) ||
+                                !toStop.getRoute().getId().equals(trip.getRoute().getId())) {
+                        throw new BusinessException("Las paradas no pertenecen a la ruta del viaje",
+                                        HttpStatus.BAD_REQUEST,
+                                        "INVALID_STOPS");
+                }
+
+                if (fromStop.getOrder() >= toStop.getOrder()) {
+                        throw new BusinessException("La parada de origen debe ser anterior a la de destino",
+                                        HttpStatus.BAD_REQUEST,
+                                        "INVALID_SEGMENT");
+                }
+
+                Integer capacity = trip.getBus().getCapacity();
+                List<SeatStatusResponse> seatStatuses = new ArrayList<>();
+
+                // Obtener los órdenes de las paradas (la consulta usa order, no ID)
+                Integer fromStopOrder = fromStop.getOrder();
+                Integer toStopOrder = toStop.getOrder();
+
+                for (Integer seatNumber = 1; seatNumber <= capacity; seatNumber++) {
+                        Boolean isAvailable = ticketRepository.isSeatAvailableForSegment(
+                                        tripId, seatNumber, fromStopOrder, toStopOrder);
+
+                        seatStatuses.add(new SeatStatusResponse(
+                                        seatNumber,
+                                        isAvailable,
+                                        isAvailable ? "AVAILABLE" : "OCCUPIED"));
+                }
+
+                return seatStatuses;
         }
 
-        Integer capacity = trip.getBus().getCapacity();
-        List<SeatStatusResponse> seatStatuses = new ArrayList<>();
+        // Actualiza el estado de un viaje validando transiciones permitidas
+        @Override
+        @Transactional
+        public TripResponse updateTripStatus(Long id, Trip.TripStatus status) {
+                Trip trip = tripRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
 
-        for (Integer seatNumber = 1; seatNumber <= capacity; seatNumber++) {
-            Boolean isAvailable = ticketRepository.isSeatAvailableForSegment(
-                    tripId, seatNumber, fromStopId.intValue(), toStopId.intValue());
+                validateStatusTransition(trip.getStatus(), status);
 
-            seatStatuses.add(new SeatStatusResponse(
-                    seatNumber,
-                    isAvailable,
-                    isAvailable ? "AVAILABLE" : "OCCUPIED"
-            ));
+                trip.setStatus(status);
+                Trip updatedTrip = tripRepository.save(trip);
+
+                return tripMapper.toResponse(updatedTrip);
         }
 
-        return seatStatuses;
-    }
+        // Cancela un viaje si aún no ha partido o llegado
+        @Override
+        @Transactional
+        public void cancelTrip(Long id) {
+                Trip trip = tripRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
 
-    @Override
-    @Transactional
-    public TripResponse updateTripStatus(Long id, Trip.TripStatus status) {
-        Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
+                if (trip.getStatus() == Trip.TripStatus.DEPARTED ||
+                                trip.getStatus() == Trip.TripStatus.ARRIVED) {
+                        throw new BusinessException("No se puede cancelar un viaje que ya partió o llegó",
+                                        HttpStatus.BAD_REQUEST,
+                                        "INVALID_CANCEL");
+                }
 
-        validateStatusTransition(trip.getStatus(), status);
+                trip.setStatus(Trip.TripStatus.CANCELLED);
+                tripRepository.save(trip);
 
-        trip.setStatus(status);
-        Trip updatedTrip = tripRepository.save(trip);
-
-
-        return tripMapper.toResponse(updatedTrip);
-    }
-
-    @Override
-    @Transactional
-    public void cancelTrip(Long id) {
-        Trip trip = tripRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
-
-        if (trip.getStatus() == Trip.TripStatus.DEPARTED ||
-            trip.getStatus() == Trip.TripStatus.ARRIVED) {
-            throw new BusinessException("No se puede cancelar un viaje que ya partió o llegó", HttpStatus.BAD_REQUEST, "INVALID_CANCEL");
         }
 
-        trip.setStatus(Trip.TripStatus.CANCELLED);
-        tripRepository.save(trip);
+        // Obtiene la lista de pasajeros que viajan en un tramo específico
+        @Override
+        @Transactional(readOnly = true)
+        public List<TicketResponse> getPassengersBySegment(Long tripId, Long fromStopId, Long toStopId) {
+                Trip trip = tripRepository.findById(tripId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Viaje", tripId));
 
+                Stop fromStop = stopRepository.findById(fromStopId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Parada origen", fromStopId));
 
-    }
+                Stop toStop = stopRepository.findById(toStopId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Parada destino", toStopId));
 
-    private void validateStatusTransition(Trip.TripStatus currentStatus, Trip.TripStatus newStatus) {
-        boolean isValidTransition = switch (currentStatus) {
-            case SCHEDULED -> newStatus == Trip.TripStatus.BOARDING || newStatus == Trip.TripStatus.CANCELLED;
-            case BOARDING -> newStatus == Trip.TripStatus.DEPARTED || newStatus == Trip.TripStatus.CANCELLED;
-            case DEPARTED -> newStatus == Trip.TripStatus.ARRIVED;
-            case ARRIVED, CANCELLED -> false;
-        };
+                if (!fromStop.getRoute().getId().equals(trip.getRoute().getId()) ||
+                                !toStop.getRoute().getId().equals(trip.getRoute().getId())) {
+                        throw new BusinessException("Las paradas no pertenecen a la ruta del viaje",
+                                        HttpStatus.BAD_REQUEST,
+                                        "INVALID_STOPS");
+                }
 
-        if (!isValidTransition) {
-            throw new BusinessException(
-                    String.format("Transición de estado inválida: %s -> %s", currentStatus, newStatus),
-                    HttpStatus.BAD_REQUEST,
-                    "INVALID_STATE_TRANSITION");
+                List<com.web.entity.Ticket> tickets = ticketRepository.findTicketsBySegment(tripId, fromStopId,
+                                toStopId);
+                return ticketMapper.toResponseList(tickets);
         }
-    }
+
+        // Valida que la transición de estado del viaje sea permitida
+        private void validateStatusTransition(Trip.TripStatus currentStatus, Trip.TripStatus newStatus) {
+                boolean isValidTransition = switch (currentStatus) {
+                        case SCHEDULED ->
+                                newStatus == Trip.TripStatus.BOARDING || newStatus == Trip.TripStatus.CANCELLED;
+                        case BOARDING ->
+                                newStatus == Trip.TripStatus.DEPARTED || newStatus == Trip.TripStatus.CANCELLED;
+                        case DEPARTED -> newStatus == Trip.TripStatus.ARRIVED;
+                        case ARRIVED, CANCELLED -> false;
+                };
+
+                if (!isValidTransition) {
+                        throw new BusinessException(
+                                        String.format("Transición de estado inválida: %s -> %s", currentStatus,
+                                                        newStatus),
+                                        HttpStatus.BAD_REQUEST,
+                                        "INVALID_STATE_TRANSITION");
+                }
+        }
 }
-

@@ -21,6 +21,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
+    // Obtiene lista de todos los usuarios
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> getAll() {
@@ -28,6 +29,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponseList(users);
     }
 
+    // Obtiene un usuario por su ID
     @Override
     @Transactional(readOnly = true)
     public UserResponse getById(Long id) {
@@ -36,6 +38,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(user);
     }
 
+    // Obtiene un usuario por su email
     @Override
     @Transactional(readOnly = true)
     public UserResponse getByEmail(String email) {
@@ -44,6 +47,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(user);
     }
 
+    // Actualiza la información de un usuario
     @Override
     @Transactional
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
@@ -59,6 +63,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toResponse(updatedUser);
     }
 
+    // Desactiva un usuario cambiando su estado a INACTIVE (soft delete)
     @Override
     @Transactional
     public void deleteUser(Long id) {
@@ -71,6 +76,7 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    // Obtiene todos los usuarios activos de un rol específico
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> getUsersByRole(User.Role role) {

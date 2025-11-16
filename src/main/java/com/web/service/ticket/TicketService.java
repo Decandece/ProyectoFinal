@@ -15,5 +15,7 @@ public interface TicketService {
     TicketResponse getTicketById(Long id);
     
     List<TicketResponse> getUserTickets(Long userId);
+    
+    TicketResponse getTicketByQrCode(String qrCode);
 }
 

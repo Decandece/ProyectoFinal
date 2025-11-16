@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 
+
 @Service
 @RequiredArgsConstructor
 public class ParcelServiceImpl implements ParcelService {
@@ -38,6 +39,7 @@ public class ParcelServiceImpl implements ParcelService {
     private final QrCodeGenerator qrCodeGenerator;
     private final OtpGenerator otpGenerator;
 
+
     @Override
     public List<ParcelResponse> getAllParcels() {
         return parcelRepository.findAll().stream()
@@ -45,13 +47,14 @@ public class ParcelServiceImpl implements ParcelService {
                 .toList();
     }
 
+    //Crear una encomienda
     @Override
     @Transactional
     public ParcelResponse createParcel(ParcelCreateRequest request) {
         Trip trip = tripRepository.findById(request.tripId())
                 .orElseThrow(() -> new ResourceNotFoundException("Viaje", request.tripId()));
 
-        // Buscar las paradas (stops)
+        // Validar paradas de origen y destino
         Stop fromStop = stopRepository.findById(request.fromStopId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parada origen", request.fromStopId()));
 
@@ -76,6 +79,8 @@ public class ParcelServiceImpl implements ParcelService {
         return parcelMapper.toResponse(savedParcel);
     }
 
+
+    // Rastrea una encomienda por su código de rastreo
     @Override
     @Transactional(readOnly = true)
     public ParcelResponse trackParcel(String code) {
@@ -84,6 +89,7 @@ public class ParcelServiceImpl implements ParcelService {
         return parcelMapper.toResponse(parcel);
     }
 
+    // Actualiza el estado de una encomienda
     @Override
     @Transactional
     public ParcelResponse updateStatus(Long parcelId, Parcel.ParcelStatus status) {
@@ -96,6 +102,7 @@ public class ParcelServiceImpl implements ParcelService {
         return parcelMapper.toResponse(updatedParcel);
     }
 
+    // Entrega una encomienda validando el OTP y guardando foto de prueba
     @Override
     @Transactional
     public ParcelResponse deliverWithOtp(Long parcelId, String otp, String photoUrl) {
@@ -138,6 +145,7 @@ public class ParcelServiceImpl implements ParcelService {
         return parcelMapper.toResponse(deliveredParcel);
     }
 
+    // Obtiene todas las encomiendas en tránsito de un viaje específico
     @Override
     @Transactional(readOnly = true)
     public List<ParcelResponse> getParcelsInTransit(Long tripId) {
@@ -145,6 +153,7 @@ public class ParcelServiceImpl implements ParcelService {
         return parcelMapper.toResponseList(parcels);
     }
 
+    // Obtiene encomiendas por rango de fechas
     @Override
     @Transactional(readOnly = true)
     public List<ParcelResponse> getParcelsByDateRange(LocalDate startDate, LocalDate endDate) {

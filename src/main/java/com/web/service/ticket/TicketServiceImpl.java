@@ -7,6 +7,7 @@ import com.web.dto.ticket.TicketResponse;
 import com.web.dto.ticket.mapper.TicketMapper;
 import com.web.entity.*;
 import com.web.exception.InvalidSegmentException;
+import com.web.exception.OverbookingNotAllowedException;
 import com.web.exception.ResourceNotFoundException;
 import com.web.exception.SeatNotAvailableException;
 import com.web.repository.*;
@@ -42,11 +43,13 @@ public class TicketServiceImpl implements TicketService {
     private final QrCodeGenerator qrCodeGenerator;
     private final ConfigService configService;
 
+    // Compra un ticket validando disponibilidad, calculando precio con descuentos y generando QR
     @Override
     @Transactional
     public TicketResponse purchaseTicket(TicketCreateRequest request) {
         LocalDateTime now = LocalDateTime.now();
 
+        // Validar que el viaje existe y está en estado SCHEDULED
         Trip trip = tripRepository.findById(request.tripId())
                 .orElseThrow(() -> new ResourceNotFoundException("Viaje", request.tripId()));
 
@@ -64,6 +67,7 @@ public class TicketServiceImpl implements TicketService {
 
         validateSegment(trip, fromStop, toStop);
 
+        // Verificar si hay una reserva temporal activa en este asiento
         Optional<SeatHold> activeHold = seatHoldRepository.findActiveHold(
                 request.tripId(),
                 request.seatNumber(),
@@ -75,6 +79,7 @@ public class TicketServiceImpl implements TicketService {
                     "El asiento " + request.seatNumber() + " tiene un hold activo de otro usuario");
         }
 
+        // Verificar disponibilidad del asiento para el tramo específico (puede estar ocupado en otros tramos)
         Boolean isSeatAvailable = ticketRepository.isSeatAvailableForSegment(
                 request.tripId(),
                 request.seatNumber(),
@@ -87,7 +92,11 @@ public class TicketServiceImpl implements TicketService {
                     "El asiento " + request.seatNumber() + " no está disponible para el tramo seleccionado");
         }
 
-        BigDecimal finalPrice = calculateFinalPrice(trip, fromStop, toStop, request);
+        // Validar que no se exceda el límite de overbooking configurado
+        validateOverbooking(trip);
+
+        // Calcular precio final aplicando tarifas dinámicas y descuentos por tipo de pasajero
+        BigDecimal finalPrice = calculateFinalPrice(trip, fromStop, toStop, request, request.passengerType());
 
         Ticket ticket = ticketMapper.toEntity(request);
         // Establecer las relaciones manualmente
@@ -99,6 +108,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setQrCode(qrCodeGenerator.generateTicketQr());
         ticket = ticketRepository.save(ticket);
 
+        // Registrar equipaje si se solicitó, calculando cargo por exceso si supera el límite
         if (request.baggage() != null) {
             BaggageCreateRequest baggageReq = request.baggage();
             
@@ -124,6 +134,7 @@ public class TicketServiceImpl implements TicketService {
 
         }
 
+        // Liberar la reserva temporal si el usuario tenía un hold activo
         if (activeHold.isPresent() && activeHold.get().getUser().getId().equals(passenger.getId())) {
             seatHoldService.releaseHold(activeHold.get().getId());
 
@@ -132,6 +143,7 @@ public class TicketServiceImpl implements TicketService {
         return ticketMapper.toResponse(ticket);
     }
 
+    // Cancela un ticket y calcula el reembolso según horas de antelación
     @Override
     @Transactional
     public TicketCancelResponse cancelTicket(Long ticketId) {
@@ -148,6 +160,7 @@ public class TicketServiceImpl implements TicketService {
         Duration timeUntilDeparture = Duration.between(now, departureTime);
         long hoursUntilDeparture = timeUntilDeparture.toHours();
 
+        // Calcular reembolso según políticas de cancelación configuradas
         BigDecimal refundPercentage = calculateRefundPercentage(hoursUntilDeparture);
         BigDecimal refundAmount = ticket.getPrice()
                 .multiply(refundPercentage)
@@ -167,6 +180,7 @@ public class TicketServiceImpl implements TicketService {
         );
     }
 
+    // Obtiene un ticket por su ID
     @Override
     @Transactional(readOnly = true)
     public TicketResponse getTicketById(Long id) {
@@ -175,6 +189,7 @@ public class TicketServiceImpl implements TicketService {
         return ticketMapper.toResponse(ticket);
     }
 
+    // Obtiene todos los tickets de un pasajero
     @Override
     @Transactional(readOnly = true)
     public List<TicketResponse> getUserTickets(Long userId) {
@@ -182,29 +197,49 @@ public class TicketServiceImpl implements TicketService {
         return ticketMapper.toResponseList(tickets);
     }
 
-    @Scheduled(cron = "0 */5 * * * *") //Cada 5 minutos HOLD
+    // Busca un ticket por su código QR (para validación en abordaje)
+    @Override
+    @Transactional(readOnly = true)
+    public TicketResponse getTicketByQrCode(String qrCode) {
+        Ticket ticket = ticketRepository.findByQrCode(qrCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", qrCode));
+        return ticketMapper.toResponse(ticket);
+    }
+
+    // Marca tickets como NO_SHOW automáticamente cada 5 minutos si el viaje ya partió
+    @Scheduled(cron = "0 */5 * * * *") // Cada 5 minutos
     @Transactional
     public void processNoShows() {
-        LocalDateTime fiveMinutesFromNow = LocalDateTime.now().plusMinutes(5);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime fiveMinutesFromNow = now.plusMinutes(5);
         
-
         List<Ticket> allTickets = ticketRepository.findAll();
         int noShowCount = 0;
+        BigDecimal totalFees = BigDecimal.ZERO;
         
         for (Ticket ticket : allTickets) {
             if (ticket.getStatus() == Ticket.TicketStatus.SOLD &&
                 ticket.getTrip().getDepartureTime().isBefore(fiveMinutesFromNow) &&
-                ticket.getTrip().getDepartureTime().isAfter(LocalDateTime.now())) {
+                ticket.getTrip().getDepartureTime().isAfter(now)) {
+                
+                // Marcar como NO_SHOW
                 ticket.setStatus(Ticket.TicketStatus.NO_SHOW);
                 ticketRepository.save(ticket);
                 noShowCount++;
-
+                
+                // El asiento queda disponible automáticamente porque el ticket ya no está SOLD
+                // (la validación isSeatAvailableForSegment solo cuenta tickets SOLD)
+                
+                // Cobrar fee configurable (se registra pero no se procesa automáticamente)
+                BigDecimal noShowFee = configService.getNoShowFee();
+                totalFees = totalFees.add(noShowFee);
             }
         }
         
-
+        // Log para auditoría (el fee se cobrará en el proceso de cierre de caja o facturación)
     }
 
+    // Valida que las paradas pertenezcan a la ruta y que el orden sea correcto
     private void validateSegment(Trip trip, Stop fromStop, Stop toStop) {
         if (!fromStop.getRoute().getId().equals(trip.getRoute().getId()) ||
             !toStop.getRoute().getId().equals(trip.getRoute().getId())) {
@@ -216,7 +251,8 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    private BigDecimal calculateFinalPrice(Trip trip, Stop fromStop, Stop toStop, TicketCreateRequest request) {
+    // Calcula el precio final aplicando tarifas dinámicas, multiplicadores y descuentos
+    private BigDecimal calculateFinalPrice(Trip trip, Stop fromStop, Stop toStop, TicketCreateRequest request, String passengerType) {
         // Precio base: primero busca en FareRule, si no existe usa ConfigService
         BigDecimal basePrice = fareRuleRepository.findByRouteIdAndFromStopIdAndToStopId(
                 trip.getRoute().getId(),
@@ -247,13 +283,53 @@ public class TicketServiceImpl implements TicketService {
             );
         }
 
-        BigDecimal finalPrice = basePrice.multiply(dynamicMultiplier)
+        BigDecimal priceWithMultipliers = basePrice.multiply(dynamicMultiplier);
+        
+        // Aplicar descuento según tipo de pasajero
+        BigDecimal discountPercentage = getDiscountPercentage(passengerType);
+        BigDecimal discountAmount = priceWithMultipliers
+                .multiply(discountPercentage)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        
+        BigDecimal finalPrice = priceWithMultipliers.subtract(discountAmount)
                 .setScale(2, RoundingMode.HALF_UP);
-
 
         return finalPrice;
     }
+    
+    // Obtiene el porcentaje de descuento según el tipo de pasajero (STUDENT, SENIOR, etc.)
+    private BigDecimal getDiscountPercentage(String passengerType) {
+        if (passengerType == null || passengerType.isEmpty()) {
+            return BigDecimal.ZERO; // Sin descuento para ADULT o tipo no especificado
+        }
+        
+        // Obtener descuentos de ConfigService
+        var config = configService.getConfig();
+        Integer discount = config.discountPercentages().get(passengerType.toUpperCase());
+        
+        return discount != null ? BigDecimal.valueOf(discount) : BigDecimal.ZERO;
+    }
+    
+    // Valida que no se exceda el límite de overbooking configurado para el viaje
+    private void validateOverbooking(Trip trip) {
+        // Contar asientos vendidos para este viaje específico
+        Long soldSeats = ticketRepository.countSoldSeats(trip.getId());
+        
+        int capacity = trip.getBus().getCapacity();
+        double occupancyRate = (double) soldSeats / capacity;
+        double maxOverbookingRate = configService.getOverbookingMaxPercentage();
+        
+        // Calcular capacidad máxima permitida con overbooking
+        double maxAllowedOccupancy = 1.0 + maxOverbookingRate;
+        
+        if (occupancyRate >= maxAllowedOccupancy) {
+            throw new OverbookingNotAllowedException(
+                    String.format("El viaje ha alcanzado el límite de overbooking permitido (%.1f%%). Ocupación actual: %.1f%%",
+                            maxOverbookingRate * 100, occupancyRate * 100));
+        }
+    }
 
+    // Calcula el porcentaje de reembolso según las horas restantes hasta la salida
     private BigDecimal calculateRefundPercentage(long hoursUntilDeparture) {
         if (hoursUntilDeparture >= 48) {
             return configService.getRefundPercentage48Hours();

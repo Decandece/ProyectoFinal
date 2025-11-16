@@ -24,6 +24,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final ConfigRepository configRepository;
     private final UserRepository userRepository;
 
+    //Obtener toda la configuracion del sistema
     @Override
     @Transactional(readOnly = true)
     public ConfigResponse getConfig() {
@@ -51,10 +52,8 @@ public class ConfigServiceImpl implements ConfigService {
         BigDecimal ticketMultiplierHighDemand = getTicketPriceMultiplierHighDemand();
         BigDecimal ticketMultiplierMediumDemand = getTicketPriceMultiplierMediumDemand();
 
-        Map<String, Integer> discounts = new HashMap<>();
-        discounts.put("STUDENT", 20);
-        discounts.put("SENIOR", 15);
-        discounts.put("CHILD", 50);
+        // Descuentos desde configuración
+        Map<String, Integer> discounts = getDiscountPercentages();
 
         return new ConfigResponse(
                 holdDuration,
@@ -77,6 +76,7 @@ public class ConfigServiceImpl implements ConfigService {
                 LocalDateTime.now());
     }
 
+    //Actualizar la configuracion
     @Override
     @Transactional
     public ConfigResponse updateConfig(ConfigUpdateRequest request, Long adminUserId) {
@@ -101,6 +101,14 @@ public class ConfigServiceImpl implements ConfigService {
 
         if (request.baggagePricePerKg() != null) {
             updateConfigValue("baggage.price.per.kg", String.valueOf(request.baggagePricePerKg()), admin);
+        }
+
+        // Descuentos
+        if (request.discountPercentages() != null && !request.discountPercentages().isEmpty()) {
+            for (Map.Entry<String, Integer> entry : request.discountPercentages().entrySet()) {
+                String discountKey = "discount.percentage." + entry.getKey().toLowerCase();
+                updateConfigValue(discountKey, String.valueOf(entry.getValue()), admin);
+            }
         }
 
         // Configuraciones adicionales
@@ -300,5 +308,23 @@ public class ConfigServiceImpl implements ConfigService {
 
         configRepository.save(config);
 
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Integer> getDiscountPercentages() {
+        Map<String, Integer> discounts = new HashMap<>();
+        // Valores por defecto
+        discounts.put("STUDENT", getDiscountPercentage("STUDENT", 20));
+        discounts.put("SENIOR", getDiscountPercentage("SENIOR", 15));
+        discounts.put("CHILD", getDiscountPercentage("CHILD", 50));
+        return discounts;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer getDiscountPercentage(String discountType, Integer fallback) {
+        String key = "discount.percentage." + discountType.toLowerCase();
+        return getIntegerConfig(key, fallback);
     }
 }

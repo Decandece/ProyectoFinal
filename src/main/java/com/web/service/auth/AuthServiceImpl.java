@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -24,6 +25,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
+    //Registra un nuevo usuario encriptando su contraseña
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -45,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toResponse(savedUser);
     }
 
+    // Autentica usuario y genera token JWT para las peticiones autorizadas
     @Override
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {

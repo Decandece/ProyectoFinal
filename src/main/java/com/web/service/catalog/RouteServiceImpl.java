@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 
+
 @Service
 @RequiredArgsConstructor
 public class RouteServiceImpl implements RouteService {
@@ -34,6 +35,7 @@ public class RouteServiceImpl implements RouteService {
     private final RouteMapper routeMapper;
     private final StopMapper stopMapper;
 
+    // Crea una nueva ruta validando que el código sea único
     @Override
     @Transactional
     public RouteResponse createRoute(RouteCreateRequest request) {
@@ -49,6 +51,7 @@ public class RouteServiceImpl implements RouteService {
         return routeMapper.toResponse(savedRoute);
     }
 
+    //Obtener todas las rutas
     @Override
     @Transactional(readOnly = true)
     public List<RouteResponse> getAllRoutes() {
@@ -56,6 +59,7 @@ public class RouteServiceImpl implements RouteService {
         return routeMapper.toResponseList(routes);
     }
 
+    //Obtener ruta por ID
     @Override
     @Transactional(readOnly = true)
     public RouteDetailResponse getRouteById(Long id) {
@@ -64,13 +68,14 @@ public class RouteServiceImpl implements RouteService {
         return routeMapper.toDetailResponse(route);
     }
 
+    //Actualizar ruta
     @Override
     @Transactional
     public RouteResponse updateRoute(Long id, RouteUpdateRequest request) {
         Route route = routeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ruta", id));
 
-        // RouteUpdateRequest no permite cambiar el código, así que no validamos
+
         routeMapper.updateEntityFromRequest(request, route);
 
         Route updatedRoute = routeRepository.save(route);
@@ -79,6 +84,7 @@ public class RouteServiceImpl implements RouteService {
         return routeMapper.toResponse(updatedRoute);
     }
 
+    //Eliminar ruta
     @Override
     @Transactional
     public void deleteRoute(Long id) {
@@ -94,6 +100,7 @@ public class RouteServiceImpl implements RouteService {
 
     }
 
+    //Añadir parada
     @Override
     @Transactional
     public RouteDetailResponse addStop(Long routeId, StopCreateRequest request) {
@@ -113,6 +120,7 @@ public class RouteServiceImpl implements RouteService {
         return getRouteById(routeId);
     }
 
+    //Remover parada
     @Override
     @Transactional
     public void removeStop(Long routeId, Long stopId) {
@@ -130,6 +138,7 @@ public class RouteServiceImpl implements RouteService {
 
     }
 
+    // buscar rutas que conecten dos ciudades específicas
     @Override
     @Transactional(readOnly = true)
     public List<RouteResponse> findRoutesConnecting(String origin, String destination) {

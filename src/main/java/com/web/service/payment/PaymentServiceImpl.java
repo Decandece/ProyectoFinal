@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 
+
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
@@ -28,6 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final UserRepository userRepository;
     private final TicketMapper ticketMapper;
 
+    //Confirmar el metodo de pago de un ticket
     @Override
     @Transactional
     public TicketResponse confirmPayment(PaymentConfirmRequest request) {
@@ -46,13 +48,16 @@ public class PaymentServiceImpl implements PaymentService {
         return ticketMapper.toResponse(updatedTicket);
     }
 
+
+
+    // calcula el total esperado de tickets en efectivo y compara con el monto real reportado
     @Override
     @Transactional(readOnly = true)
     public CashCloseResponse closeCash(CashCloseRequest request, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", userId));
 
-        // Buscar tickets de efectivo del día
+        // Calcular total de tickets en efectivo del día
         List<Ticket> cashTickets = ticketRepository.findAll().stream()
                 .filter(t -> t.getPaymentMethod() == Ticket.PaymentMethod.CASH)
                 .filter(t -> t.getTrip().getTripDate().equals(request.date()))
@@ -67,7 +72,7 @@ public class PaymentServiceImpl implements PaymentService {
 
 
         return new CashCloseResponse(
-                userId, // Usar el userId como ID del cierre
+                userId,
                 user.getName(),
                 request.date(),
                 request.expectedAmount(),

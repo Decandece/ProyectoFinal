@@ -60,7 +60,7 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
         @Param("stopId") Long stopId
     );
 
-    // Validar OTP para entrega - CASO DE USO 4
+    // Validar OTP para entrega
     @Query("""
         SELECT p FROM Parcel p
         WHERE p.code = :code
@@ -84,7 +84,7 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
         @Param("endDate") LocalDate endDate
     );
 
-    // Métricas: Contar encomiendas fallidas (para rastreo de incidentes) - CASO DE USO 4
+    // Métricas: Contar encomiendas fallidas
     @Query("""
         SELECT COUNT(p)
         FROM Parcel p
