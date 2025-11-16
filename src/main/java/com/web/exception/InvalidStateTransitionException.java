@@ -2,6 +2,7 @@ package com.web.exception;
 
 import org.springframework.http.HttpStatus;
 
+// Excepción lanzada cuando se intenta cambiar a un estado no permitido (ej: SCHEDULED -> ARRIVED)
 public class InvalidStateTransitionException extends BusinessException {
     public InvalidStateTransitionException(String message) {
         super(message, HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_STATE_TRANSITION");

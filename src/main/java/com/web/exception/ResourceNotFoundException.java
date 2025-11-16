@@ -2,6 +2,7 @@ package com.web.exception;
 
 import org.springframework.http.HttpStatus;
 
+// Excepción lanzada cuando no se encuentra un recurso solicitado (por ID o identificador)
 public class ResourceNotFoundException extends BusinessException {
     public ResourceNotFoundException(String message) {
         super(message, HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND");
