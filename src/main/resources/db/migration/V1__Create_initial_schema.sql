@@ -170,6 +170,8 @@ CREATE TABLE
         driver_id BIGINT NOT NULL REFERENCES users (id),
         dispatcher_id BIGINT REFERENCES users (id),
         checklist_ok BOOLEAN NOT NULL DEFAULT FALSE,
+        soat_valid BOOLEAN NOT NULL DEFAULT FALSE,
+        revision_valid BOOLEAN NOT NULL DEFAULT FALSE,
         assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
