@@ -1,5 +1,6 @@
 package com.web.controller;
 
+import com.web.dto.ticket.TicketResponse;
 import com.web.dto.trip.SeatStatusResponse;
 import com.web.dto.trip.TripCreateRequest;
 import com.web.dto.trip.TripDetailResponse;
@@ -51,6 +52,16 @@ public class TripController {
             @RequestParam Long fromStopId,
             @RequestParam Long toStopId) {
         return ResponseEntity.ok(tripService.getSeatAvailability(id, fromStopId, toStopId));
+    }
+
+    @GetMapping("/{tripId}/passengers")
+    @PreAuthorize("hasAnyRole('DRIVER', 'DISPATCHER')")
+    public ResponseEntity<List<TicketResponse>> getPassengersBySegment(
+            @PathVariable Long tripId,
+            @RequestParam Long fromStopId,
+            @RequestParam Long toStopId) {
+        List<TicketResponse> response = tripService.getPassengersBySegment(tripId, fromStopId, toStopId);
+        return ResponseEntity.ok(response);
     }
 
     // Endpoints protegidos (solo ADMIN)
