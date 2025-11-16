@@ -33,6 +33,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final UserRepository userRepository;
     private final AssignmentMapper assignmentMapper;
 
+    // Asigna un conductor a un viaje verificando que no tenga conflictos de horario
     @Override
 
     @Transactional
@@ -76,6 +77,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         return assignmentMapper.toResponse(savedAssignment);
     }
 
+    // Obtiene la asignación de un viaje específico por su ID
     @Override
     @Transactional(readOnly = true)
     public AssignmentResponse getAssignmentByTrip(Long tripId) {
@@ -84,6 +86,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         return assignmentMapper.toResponse(assignment);
     }
 
+    // Actualiza el checklist de una asignación (SOAT, revisión técnica, etc.)
     @Override
     @Transactional
     public AssignmentResponse updateChecklist(Long assignmentId, AssignmentUpdateRequest request) {
@@ -98,6 +101,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         return assignmentMapper.toResponse(updatedAssignment);
     }
 
+    // Obtiene todas las asignaciones de un conductor (filtro por fecha opcional)
     @Override
     @Transactional(readOnly = true)
     public List<AssignmentResponse> getDriverAssignments(Long driverId, LocalDate date) {
@@ -106,6 +110,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         return assignmentMapper.toResponseList(assignments);
     }
 
+    // Obtiene las asignaciones realizadas por un despachador desde la fecha actual
     @Override
     @Transactional(readOnly = true)
     public List<AssignmentResponse> getDispatcherAssignments(Long dispatcherId) {

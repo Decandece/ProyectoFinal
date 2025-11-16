@@ -12,6 +12,8 @@ public record AssignmentResponse(
     Long dispatcherId,
     String dispatcherName,
     Boolean checklistOk,
+    Boolean soatValid,
+    Boolean revisionValid,
     LocalDateTime assignedAt
 ) implements Serializable {}
 
