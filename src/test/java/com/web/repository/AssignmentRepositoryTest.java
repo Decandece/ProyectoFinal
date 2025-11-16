@@ -16,7 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para asignaciones de conductores a viajes
+
 @DisplayName("AssignmentRepository Integration Tests")
 class AssignmentRepositoryTest extends BaseRepositoryTest {
 
@@ -129,7 +129,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 entityManager.flush();
         }
 
-        // TEST: Buscar asignación por ID de viaje
+        //Buscar asignación por ID de viaje
         @Test
         @DisplayName("Debe encontrar asignación por viaje")
         void shouldFindAssignmentByTripId() {
@@ -152,7 +152,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 assertThat(result.get().getChecklistOk()).isTrue();
         }
 
-        // TEST: Buscar todas las asignaciones de un conductor específico
+        //Buscar todas las asignaciones de un conductor específico
         @Test
         @DisplayName("Debe encontrar asignaciones por conductor")
         void shouldFindAssignmentsByDriverId() {
@@ -184,7 +184,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                                 .containsExactlyInAnyOrder(trip1.getId(), trip3.getId());
         }
 
-        // TEST: Filtrar asignaciones de conductor por fecha específica
+        //Filtrar asignaciones de conductor por fecha específica
         @Test
         @DisplayName("Debe encontrar asignaciones de un conductor para una fecha")
         void shouldFindDriverAssignmentsForDate() {
@@ -227,7 +227,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                                 .containsExactlyInAnyOrder(trip1.getId(), trip2.getId());
         }
 
-        // TEST: Verificar disponibilidad del conductor (evitar conflictos de horario)
+        //Verificar disponibilidad del conductor (evitar conflictos de horario)
         @Test
         @DisplayName("Debe verificar si el conductor está disponible (sin conflictos)")
         void shouldCheckIfDriverIsAvailable() {
@@ -260,7 +260,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 assertThat(availableAfterTrip).isTrue();
         }
 
-        // TEST: Buscar asignaciones que tienen checklist sin completar
+        //Buscar asignaciones que tienen checklist sin completar
         @Test
         @DisplayName("Debe encontrar asignaciones con checklist pendiente")
         void shouldFindPendingChecklists() {
@@ -292,7 +292,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 assertThat(pendingChecklists.get(0).getChecklistOk()).isFalse();
         }
 
-        // TEST: Buscar asignaciones creadas por un despachador específico
+        //Buscar asignaciones creadas por un despachador específico
         @Test
         @DisplayName("Debe encontrar asignaciones por despachador")
         void shouldFindAssignmentsByDispatcherId() {
@@ -324,8 +324,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 assertThat(dispatcherAssignments).hasSize(2);
         }
 
-        // TEST: Obtener asignación con todas las relaciones cargadas (evita N+1
-        // queries)
+        // Obtener asignación con todas las relaciones cargadas
         @Test
         @DisplayName("Debe obtener asignación con detalles completos (fetch join)")
         void shouldFindAssignmentByIdWithDetails() {
@@ -352,7 +351,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 assertThat(fetchedAssignment.getDispatcher().getName()).isEqualTo("Carlos Despachador");
         }
 
-        // TEST: Verificar que retorna Optional.empty() cuando no existe la asignación
+        //Verificar que retorna Optional.empty() cuando no existe la asignación
         @Test
         @DisplayName("Debe retornar Optional vacío cuando no hay asignación para el viaje")
         void shouldReturnEmptyWhenNoAssignmentForTrip() {
@@ -363,8 +362,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
                 assertThat(result).isEmpty();
         }
 
-        // TEST: Verificar que retorna lista vacía cuando conductor no tiene
-        // asignaciones
+        //Verificar que retorna lista vacía cuando conductor no tiene asignaciones
         @Test
         @DisplayName("Debe retornar lista vacía cuando el conductor no tiene asignaciones")
         void shouldReturnEmptyListWhenDriverHasNoAssignments() {

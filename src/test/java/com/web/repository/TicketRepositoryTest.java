@@ -16,6 +16,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// TEST DE REPOSITORIO: Consultas JPA para tickets (búsquedas, disponibilidad, reportes)
+// Verifica queries personalizadas para gestión de boletos y asientos
 @DisplayName("TicketRepository Integration Tests")
 class TicketRepositoryTest extends BaseRepositoryTest {
 
@@ -122,6 +124,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         entityManager.flush();
     }
 
+    // TEST: Buscar tickets por ID de viaje y número de asiento específico
     @Test
     @DisplayName("Debe encontrar tickets por viaje y asiento")
     void shouldFindTicketsByTripIdAndSeatNumber() {
@@ -148,6 +151,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(tickets.get(0).getPassenger().getName()).isEqualTo("Laura Pasajera");
     }
 
+    // TEST: Obtener todos los tickets asociados a un viaje
     @Test
     @DisplayName("Debe encontrar todos los tickets de un viaje")
     void shouldFindTicketsByTripId() {
@@ -175,6 +179,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(tickets).hasSize(3);
     }
 
+    // TEST: Buscar historial de tickets de un pasajero específico
     @Test
     @DisplayName("Debe encontrar tickets por pasajero")
     void shouldFindTicketsByPassengerId() {
@@ -214,6 +219,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(tickets).hasSize(2);
     }
 
+    // TEST: Buscar ticket mediante código QR único (para validación de abordaje)
     @Test
     @DisplayName("Debe encontrar ticket por código QR")
     void shouldFindTicketByQrCode() {
@@ -240,6 +246,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(result.get().getSeatNumber()).isEqualTo(20);
     }
 
+    // TEST: Detectar tickets que ocupan el mismo asiento en un tramo específico
     @Test
     @DisplayName("Debe encontrar tickets conflictivos para un tramo")
     void shouldFindConflictingTicketsForSegment() {
@@ -270,6 +277,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(conflicts).hasSize(1);
     }
 
+    // TEST: Verificar disponibilidad de asiento en un tramo (evita doble reserva)
     @Test
     @DisplayName("Debe verificar si un asiento está disponible para un tramo")
     void shouldCheckIfSeatIsAvailableForSegment() {
@@ -308,6 +316,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(availableForNonConflict).isTrue(); // No solapa
     }
 
+    // TEST: Contar cuántos asientos únicos se han vendido en un viaje
     @Test
     @DisplayName("Debe contar asientos vendidos únicos por viaje")
     void shouldCountSoldSeats() {
@@ -335,6 +344,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(count).isEqualTo(5);
     }
 
+    // TEST: Buscar tickets que pasan por una parada específica (origen o destino)
     @Test
     @DisplayName("Debe encontrar tickets en una parada específica")
     void shouldFindTicketsAtStop() {
@@ -378,6 +388,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(ticketsAtTunja.get(0).getSeatNumber()).isEqualTo(1);
     }
 
+    // TEST: Buscar ticket que puede ser cancelado (estado SOLD, viaje futuro)
     @Test
     @DisplayName("Debe encontrar ticket cancelable")
     void shouldFindCancellableTicket() {
@@ -406,6 +417,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(result).isPresent();
     }
 
+    // TEST: Calcular ingresos totales de tickets vendidos en un rango de fechas
     @Test
     @DisplayName("Debe calcular ingresos por rango de fechas")
     void shouldCalculateRevenue() {
@@ -433,6 +445,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(revenue).isEqualByComparingTo(new BigDecimal("150000.00"));
     }
 
+    // TEST: Calcular ingresos agrupados por método de pago (CASH/CARD)
     @Test
     @DisplayName("Debe calcular ingresos por método de pago")
     void shouldCalculateRevenueByPaymentMethod() {
@@ -489,6 +502,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         // CASH: 100000, CARD: 50000
     }
 
+    // TEST: Contar número de tickets cancelados en un rango de fechas
     @Test
     @DisplayName("Debe contar cancelaciones")
     void shouldCountCancellations() {
@@ -528,6 +542,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(count).isEqualTo(2);
     }
 
+    // TEST: Buscar tickets que necesitan sincronización (modo offline)
     @Test
     @DisplayName("Debe encontrar tickets pendientes de sincronización")
     void shouldFindPendingSyncTickets() {
@@ -567,6 +582,7 @@ class TicketRepositoryTest extends BaseRepositoryTest {
         assertThat(pendingSync).hasSize(2);
     }
 
+    // TEST: Buscar tickets no usados después de la salida del viaje (no-show)
     @Test
     @DisplayName("Debe encontrar tickets elegibles para NO_SHOW")
     void shouldFindNoShowEligibleTickets() {

@@ -16,6 +16,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// TEST DE REPOSITORIO: Consultas JPA para equipaje (tags, excesos, estadísticas)
+// Verifica gestión de equipaje asociado a tickets
 @DisplayName("BaggageRepository Integration Tests")
 class BaggageRepositoryTest extends BaseRepositoryTest {
 

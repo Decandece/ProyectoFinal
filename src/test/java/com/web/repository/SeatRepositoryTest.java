@@ -14,6 +14,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// TEST DE REPOSITORIO: Consultas JPA para asientos (búsqueda por bus, tipo, estado)
+// Verifica gestión de asientos y configuración de buses
 @DisplayName("SeatRepository Integration Tests")
 class SeatRepositoryTest extends BaseRepositoryTest {
 

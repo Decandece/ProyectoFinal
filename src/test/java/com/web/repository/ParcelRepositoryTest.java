@@ -16,6 +16,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// TEST DE REPOSITORIO: Consultas JPA para paquetería/encomiendas
+// Verifica gestión de paquetes, tracking y estado de envíos
 @DisplayName("ParcelRepository Integration Tests")
 class ParcelRepositoryTest extends BaseRepositoryTest {
 
