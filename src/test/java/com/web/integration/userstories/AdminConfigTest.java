@@ -33,11 +33,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * TESTS UNITARIOS del AdminController (solo capa web con mocks)
- * Valida que los endpoints HTTP funcionen correctamente sin lógica de negocio
- * real
- */
+
 @WebMvcTest(controllers = AdminController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminConfigTest {

@@ -7,8 +7,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-// Tests de repositorio usando Testcontainers con PostgreSQL
-// REQUIERE: Docker Desktop debe estar corriendo en tu máquina
+
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

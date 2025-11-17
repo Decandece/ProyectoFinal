@@ -17,8 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para reglas de tarifas dinámicas
-// Verifica búsqueda de reglas por ruta, tramo y validez temporal
+
 @DisplayName("FareRuleRepository Integration Tests")
 class FareRuleRepositoryTest extends BaseRepositoryTest {
 

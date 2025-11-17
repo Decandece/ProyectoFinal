@@ -13,8 +13,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para paradas (orden en ruta, coordenadas)
-// Verifica gestión de paradas asociadas a rutas
+
 @DisplayName("StopRepository Integration Tests")
 class StopRepositoryTest extends BaseRepositoryTest {
 

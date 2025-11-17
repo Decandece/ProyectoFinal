@@ -20,8 +20,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para buses (placas, estado, capacidad)
-// Verifica gestión de buses y amenidades
+
 @DisplayName("BusRepository Integration Tests")
 class BusRepositoryTest extends BaseRepositoryTest {
 

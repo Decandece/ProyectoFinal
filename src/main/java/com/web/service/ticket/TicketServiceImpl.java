@@ -130,7 +130,8 @@ public class TicketServiceImpl implements TicketService {
                 baggage.setExcessFee(BigDecimal.ZERO);
             }
 
-            baggageRepository.save(baggage);
+            baggage = baggageRepository.save(baggage);
+            ticket.setBaggage(baggage);  // Actualizar relación bidireccional
 
         }
 

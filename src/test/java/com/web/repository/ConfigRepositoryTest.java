@@ -12,8 +12,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para configuración del sistema
-// Verifica lectura y actualización de políticas globales
 @DisplayName("ConfigRepository Integration Tests")
 class ConfigRepositoryTest extends BaseRepositoryTest {
 

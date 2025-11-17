@@ -16,8 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para tickets (búsquedas, disponibilidad, reportes)
-// Verifica queries personalizadas para gestión de boletos y asientos
+
 @DisplayName("TicketRepository Integration Tests")
 class TicketRepositoryTest extends BaseRepositoryTest {
 

@@ -17,8 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para reservas temporales de asientos
-// Verifica gestión de holds, expiración y liberación de asientos
+
 @DisplayName("SeatHoldRepository Integration Tests")
 class SeatHoldRepositoryTest extends BaseRepositoryTest {
 

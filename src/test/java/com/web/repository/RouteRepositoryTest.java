@@ -14,8 +14,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para rutas y paradas
-// Verifica búsquedas de rutas activas, códigos únicos y gestión de paradas
+
 @DisplayName("RouteRepository Integration Tests")
 class RouteRepositoryTest extends BaseRepositoryTest {
 

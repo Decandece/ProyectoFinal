@@ -15,8 +15,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TEST DE REPOSITORIO: Consultas JPA para incidentes/eventos (retrasos, averías)
-// Verifica registro y búsqueda de incidentes por viaje y severidad
+
 @DisplayName("IncidentRepository Integration Tests")
 class IncidentRepositoryTest extends BaseRepositoryTest {
 

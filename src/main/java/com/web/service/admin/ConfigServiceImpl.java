@@ -32,8 +32,8 @@ public class ConfigServiceImpl implements ConfigService {
         Integer holdDuration = getIntegerConfig("hold.duration.minutes", 10);
         Integer overbookingPercentage = getIntegerConfig("overbooking.percentage", 5);
         Integer noShowFeePercentage = getIntegerConfig("no.show.fee.percentage", 10);
-        BigDecimal baggageWeightLimit = getDecimalConfig("baggage.weight.limit", BigDecimal.valueOf(23.0));
-        BigDecimal baggagePricePerKg = getDecimalConfig("baggage.price.per.kg", BigDecimal.valueOf(5000));
+        BigDecimal baggageWeightLimit = getDecimalConfig("baggage.weight.limit", BigDecimal.valueOf(20.0));
+        BigDecimal baggagePricePerKg = getDecimalConfig("baggage.price.per.kg", BigDecimal.valueOf(2500));
 
         // Configuraciones adicionales
         BigDecimal noShowFee = getNoShowFee();
@@ -179,13 +179,13 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     @Transactional(readOnly = true)
     public Double getBaggageWeightLimit() {
-        return getDoubleConfig("baggage.weight.limit", 23.0);
+        return getDoubleConfig("baggage.weight.limit", 20.0);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BigDecimal getExcessFeePerKg() {
-        return getDecimalConfig("baggage.price.per.kg", BigDecimal.valueOf(5000));
+        return getDecimalConfig("baggage.price.per.kg", BigDecimal.valueOf(2500));
     }
 
     @Override

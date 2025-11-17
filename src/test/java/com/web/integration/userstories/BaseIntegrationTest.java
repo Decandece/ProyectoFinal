@@ -13,7 +13,6 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 @AutoConfigureMockMvc
 @Testcontainers
 @Transactional
-@ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 
     @Container

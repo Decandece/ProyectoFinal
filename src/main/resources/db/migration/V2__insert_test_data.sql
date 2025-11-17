@@ -1105,7 +1105,7 @@ VALUES
     ),
     (
         'baggage.weight.limit',
-        '23.0',
+        '20.0',
         'Peso permitido por equipaje antes de cobrar exceso (kg)',
         'DECIMAL',
         NULL,
@@ -1113,7 +1113,7 @@ VALUES
     ),
     (
         'baggage.price.per.kg',
-        '5000',
+        '2500',
         'Tarifa por kilogramo de exceso de equipaje',
         'DECIMAL',
         NULL,

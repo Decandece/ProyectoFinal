@@ -7,7 +7,6 @@ import com.web.dto.auth.Login.RegisterRequest;
 import com.web.dto.auth.User.UserResponse;
 import com.web.config.CustomUserDetailsService;
 import com.web.entity.User;
-import com.web.exception.EmailAlreadyExistsException;
 import com.web.exception.InvalidCredentialsException;
 import com.web.service.auth.AuthService;
 import com.web.util.JwtTokenProvider;
@@ -19,8 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;

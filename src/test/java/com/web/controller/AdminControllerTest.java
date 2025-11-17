@@ -28,7 +28,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Tests para el controlador de administración del sistema
+
 @WebMvcTest(AdminController.class)
 class  AdminControllerTest {
 

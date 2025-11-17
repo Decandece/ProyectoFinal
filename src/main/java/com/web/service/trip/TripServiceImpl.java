@@ -95,7 +95,43 @@ public class TripServiceImpl implements TripService {
         public TripDetailResponse getTripById(Long id) {
                 Trip trip = tripRepository.findByIdWithDetails(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Viaje", id));
-                return tripMapper.toDetailResponse(trip);
+
+                // Mapear la entidad a DTO básico
+                TripDetailResponse basicResponse = tripMapper.toDetailResponse(trip);
+
+                // Calcular los campos que faltan
+                Long soldSeatsCount = ticketRepository.countSoldSeats(trip.getId());
+                Integer capacity = trip.getBus().getCapacity();
+                Integer availableSeatsCount = capacity - soldSeatsCount.intValue();
+                Double occupancy = capacity > 0 ? (soldSeatsCount.doubleValue() / capacity) * 100.0 : 0.0;
+
+                // Calcular números de asientos disponibles
+                List<Integer> availableSeatNumbers = new ArrayList<>();
+                for (int seatNum = 1; seatNum <= capacity; seatNum++) {
+                        // Verificar si el asiento está vendido para cualquier tramo del viaje
+                        boolean isSold = ticketRepository.existsByTripIdAndSeatNumberAndStatus(
+                                        trip.getId(),
+                                        seatNum,
+                                        com.web.entity.Ticket.TicketStatus.SOLD);
+                        if (!isSold) {
+                                availableSeatNumbers.add(seatNum);
+                        }
+                }
+
+                // Crear el response completo con todos los campos calculados
+                return new TripDetailResponse(
+                                basicResponse.id(),
+                                basicResponse.route(),
+                                basicResponse.bus(),
+                                basicResponse.tripDate(),
+                                basicResponse.departureTime(),
+                                basicResponse.arrivalEta(),
+                                basicResponse.status(),
+                                basicResponse.assignment(),
+                                soldSeatsCount.intValue(),
+                                availableSeatsCount,
+                                occupancy,
+                                availableSeatNumbers);
         }
 
         // Obtiene el estado de disponibilidad de todos los asientos para un tramo
@@ -128,7 +164,7 @@ public class TripServiceImpl implements TripService {
                 Integer capacity = trip.getBus().getCapacity();
                 List<SeatStatusResponse> seatStatuses = new ArrayList<>();
 
-                // Obtener los órdenes de las paradas (la consulta usa order, no ID)
+                // Obtener los órdenes de las paradas
                 Integer fromStopOrder = fromStop.getOrder();
                 Integer toStopOrder = toStop.getOrder();
 

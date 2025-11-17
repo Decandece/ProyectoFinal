@@ -236,4 +236,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         @Param("tripId") Long tripId,
         @Param("cutoffTime") LocalDateTime cutoffTime
     );
+
+    // Verificar si existe un ticket vendido para un viaje y asiento específico
+    boolean existsByTripIdAndSeatNumberAndStatus(Long tripId, Integer seatNumber, Ticket.TicketStatus status);
 }
