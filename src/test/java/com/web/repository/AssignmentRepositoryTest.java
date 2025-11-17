@@ -37,8 +37,8 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
 
         @BeforeEach
         void setUp() {
-                entityManager.clear();
-
+                // La limpieza automática se ejecuta en BaseRepositoryTest antes de este método
+                
                 // Crear ruta
                 route = Route.builder()
                                 .code("BOG-BGA")
