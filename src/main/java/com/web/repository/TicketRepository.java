@@ -27,215 +27,190 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     // Buscar tickets conflictivos para validación de tramos - CASO DE USO 1
     @Query("""
-        SELECT t FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.seatNumber = :seatNumber
-        AND t.status = 'SOLD'
-        AND t.fromStop.order < :toStopOrder
-        AND t.toStop.order > :fromStopOrder
-    """)
+                SELECT t FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.seatNumber = :seatNumber
+                AND t.status = 'SOLD'
+                AND t.fromStop.order < :toStopOrder
+                AND t.toStop.order > :fromStopOrder
+            """)
     List<Ticket> findConflictingTicketsForSegment(
-        @Param("tripId") Long tripId,
-        @Param("seatNumber") Integer seatNumber,
-        @Param("fromStopOrder") Integer fromStopOrder,
-        @Param("toStopOrder") Integer toStopOrder
-    );
+            @Param("tripId") Long tripId,
+            @Param("seatNumber") Integer seatNumber,
+            @Param("fromStopOrder") Integer fromStopOrder,
+            @Param("toStopOrder") Integer toStopOrder);
 
     // Verificar si un asiento está disponible para TODO el viaje (para SeatHold)
     @Query("""
-        SELECT CASE WHEN COUNT(t) = 0 THEN true ELSE false END
-        FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.seatNumber = :seatNumber
-        AND t.status = 'SOLD'
-    """)
+                SELECT CASE WHEN COUNT(t) = 0 THEN true ELSE false END
+                FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.seatNumber = :seatNumber
+                AND t.status = 'SOLD'
+            """)
     Boolean isSeatAvailableForFullTrip(
-        @Param("tripId") Long tripId,
-        @Param("seatNumber") Integer seatNumber
-    );
+            @Param("tripId") Long tripId,
+            @Param("seatNumber") Integer seatNumber);
 
-    // Verificar si un asiento está disponible para un tramo específico - CASO DE USO 1
+    // Verificar si un asiento está disponible para un tramo específico - CASO DE
+    // USO 1
     @Query("""
-        SELECT CASE WHEN COUNT(t) = 0 THEN true ELSE false END
-        FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.seatNumber = :seatNumber
-        AND t.status = 'SOLD'
-        AND t.fromStop.order < :toStopOrder
-        AND t.toStop.order > :fromStopOrder
-    """)
+                SELECT CASE WHEN COUNT(t) = 0 THEN true ELSE false END
+                FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.seatNumber = :seatNumber
+                AND t.status = 'SOLD'
+                AND t.fromStop.order < :toStopOrder
+                AND t.toStop.order > :fromStopOrder
+            """)
     boolean isSeatAvailableForSegment(
-        @Param("tripId") Long tripId,
-        @Param("seatNumber") Integer seatNumber,
-        @Param("fromStopOrder") Integer fromStopOrder,
-        @Param("toStopOrder") Integer toStopOrder
-    );
+            @Param("tripId") Long tripId,
+            @Param("seatNumber") Integer seatNumber,
+            @Param("fromStopOrder") Integer fromStopOrder,
+            @Param("toStopOrder") Integer toStopOrder);
 
     // Obtener cantidad de asientos vendidos para un viaje
     @Query("""
-        SELECT COUNT(DISTINCT t.seatNumber)
-        FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.status = 'SOLD'
-    """)
+                SELECT COUNT(DISTINCT t.seatNumber)
+                FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.status = 'SOLD'
+            """)
     Long countSoldSeats(@Param("tripId") Long tripId);
 
     // Obtener tickets de un viaje en una parada específica (para abordaje)
     @Query("""
-        SELECT t FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.status = 'SOLD'
-        AND t.fromStop.order <= :stopOrder
-        AND t.toStop.order > :stopOrder
-        ORDER BY t.seatNumber
-    """)
+                SELECT t FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.status = 'SOLD'
+                AND t.fromStop.order <= :stopOrder
+                AND t.toStop.order > :stopOrder
+                ORDER BY t.seatNumber
+            """)
     List<Ticket> findTicketsAtStop(
-        @Param("tripId") Long tripId,
-        @Param("stopOrder") Integer stopOrder
-    );
+            @Param("tripId") Long tripId,
+            @Param("stopOrder") Integer stopOrder);
 
-    // Obtener tickets de un viaje para un tramo específico (para lista de pasajeros)
+    // Obtener tickets de un viaje para un tramo específico (para lista de
+    // pasajeros)
     @Query("""
-        SELECT t FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.status = 'SOLD'
-        AND t.fromStop.id = :fromStopId
-        AND t.toStop.id = :toStopId
-        ORDER BY t.seatNumber
-    """)
+                SELECT t FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.status = 'SOLD'
+                AND t.fromStop.id = :fromStopId
+                AND t.toStop.id = :toStopId
+                ORDER BY t.seatNumber
+            """)
     List<Ticket> findTicketsBySegment(
-        @Param("tripId") Long tripId,
-        @Param("fromStopId") Long fromStopId,
-        @Param("toStopId") Long toStopId
-    );
+            @Param("tripId") Long tripId,
+            @Param("fromStopId") Long fromStopId,
+            @Param("toStopId") Long toStopId);
 
     // Buscar tickets elegibles para cancelación (para política de reembolso)
     @Query("""
-        SELECT t FROM Ticket t
-        WHERE t.id = :ticketId
-        AND t.status = 'SOLD'
-        AND t.trip.departureTime > :now
-    """)
+                SELECT t FROM Ticket t
+                WHERE t.id = :ticketId
+                AND t.status = 'SOLD'
+                AND t.trip.departureTime > :now
+            """)
     Optional<Ticket> findCancellableTicket(
-        @Param("ticketId") Long ticketId,
-        @Param("now") LocalDateTime now
-    );
+            @Param("ticketId") Long ticketId,
+            @Param("now") LocalDateTime now);
 
     // Buscar tickets CASH en rango de tiempo (para cierre de caja)
     @Query("""
-        SELECT t FROM Ticket t
-        WHERE t.passenger.id = :userId
-        AND t.paymentMethod = 'CASH'
-        AND t.status = 'SOLD'
-        AND t.trip.departureTime BETWEEN :startTime AND :endTime
-        ORDER BY t.trip.departureTime
-    """)
+                SELECT t FROM Ticket t
+                WHERE t.passenger.id = :userId
+                AND t.paymentMethod = 'CASH'
+                AND t.status = 'SOLD'
+                AND t.trip.departureTime BETWEEN :startTime AND :endTime
+                ORDER BY t.trip.departureTime
+            """)
     List<Ticket> findCashTicketsInTimeRange(
-        @Param("userId") Long userId,
-        @Param("startTime") LocalDateTime startTime,
-        @Param("endTime") LocalDateTime endTime
-    );
+            @Param("userId") Long userId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime);
 
     // Métricas: Calcular ingresos por rango de fechas
     @Query("""
-        SELECT SUM(t.price)
-        FROM Ticket t
-        WHERE t.status = 'SOLD'
-        AND t.trip.tripDate BETWEEN :startDate AND :endDate
-    """)
+                SELECT SUM(t.price)
+                FROM Ticket t
+                WHERE t.status = 'SOLD'
+                AND t.trip.tripDate BETWEEN :startDate AND :endDate
+            """)
     BigDecimal calculateRevenue(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate
-    );
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
     // Métricas: Calcular ingresos por método de pago
     @Query("""
-        SELECT t.paymentMethod, SUM(t.price)
-        FROM Ticket t
-        WHERE t.status = 'SOLD'
-        AND t.trip.tripDate BETWEEN :startDate AND :endDate
-        GROUP BY t.paymentMethod
-    """)
+                SELECT t.paymentMethod, SUM(t.price)
+                FROM Ticket t
+                WHERE t.status = 'SOLD'
+                AND t.trip.tripDate BETWEEN :startDate AND :endDate
+                GROUP BY t.paymentMethod
+            """)
     List<Object[]> calculateRevenueByPaymentMethod(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate
-    );
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
     // Métricas: Contar tickets vendidos en rango de fechas
     @Query("""
-        SELECT COUNT(t)
-        FROM Ticket t
-        WHERE t.status = 'SOLD'
-        AND t.trip.tripDate BETWEEN :startDate AND :endDate
-    """)
+                SELECT COUNT(t)
+                FROM Ticket t
+                WHERE t.status = 'SOLD'
+                AND t.trip.tripDate BETWEEN :startDate AND :endDate
+            """)
     Long countSoldTicketsInRange(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate
-    );
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
     // Métricas: Calcular ingresos por viaje
     @Query("""
-        SELECT SUM(t.price)
-        FROM Ticket t
-        WHERE t.trip.id = :tripId
-        AND t.status = 'SOLD'
-    """)
+                SELECT SUM(t.price)
+                FROM Ticket t
+                WHERE t.trip.id = :tripId
+                AND t.status = 'SOLD'
+            """)
     BigDecimal calculateRevenueByTrip(@Param("tripId") Long tripId);
 
     // Métricas: Contar cancelaciones
     @Query("""
-        SELECT COUNT(t)
-        FROM Ticket t
-        WHERE t.status = 'CANCELLED'
-        AND t.trip.tripDate BETWEEN :startDate AND :endDate
-    """)
+                SELECT COUNT(t)
+                FROM Ticket t
+                WHERE t.status = 'CANCELLED'
+                AND t.trip.tripDate BETWEEN :startDate AND :endDate
+            """)
     Long countCancellationsInRange(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate
-    );
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
-    // Alias para countCancellationsInRange (backward compatibility)
-    default Long countCancellations(LocalDate startDate, LocalDate endDate) {
-        return countCancellationsInRange(startDate, endDate);
-    }
 
     // Métricas: Contar NO_SHOW en rango de fechas
     @Query("""
-        SELECT COUNT(t)
-        FROM Ticket t
-        WHERE t.status = 'NO_SHOW'
-        AND t.trip.tripDate BETWEEN :startDate AND :endDate
-    """)
+                SELECT COUNT(t)
+                FROM Ticket t
+                WHERE t.status = 'NO_SHOW'
+                AND t.trip.tripDate BETWEEN :startDate AND :endDate
+            """)
     Long countNoShowsInRange(
-        @Param("startDate") LocalDate startDate,
-        @Param("endDate") LocalDate endDate
-    );
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
-    // Buscar tickets pendientes de sincronización (operación offline) - CASO DE USO 5
+    // Buscar tickets elegibles para marcar como NO_SHOW
     @Query("""
-        SELECT t FROM Ticket t
-        WHERE t.qrCode IS NULL
-        OR t.qrCode = 'PENDING_SYNC'
-        ORDER BY t.purchasedAt
-    """)
-    List<Ticket> findPendingSyncTickets();
-
-    // Buscar tickets elegibles para marcar como NO_SHOW - Regla de negocio #5
-    // Tickets vendidos cuyo viaje está por salir y el pasajero aborda en el origen
-    @Query("""
-        SELECT t FROM Ticket t
-        JOIN t.trip tr
-        WHERE t.trip.id = :tripId
-        AND t.status = 'SOLD'
-        AND tr.departureTime <= :cutoffTime
-        AND t.fromStop.order = (
-            SELECT MIN(s.order) FROM Stop s WHERE s.route.id = tr.route.id
-        )
-    """)
+                SELECT t FROM Ticket t
+                JOIN t.trip tr
+                WHERE t.trip.id = :tripId
+                AND t.status = 'SOLD'
+                AND tr.departureTime <= :cutoffTime
+                AND t.fromStop.order = (
+                    SELECT MIN(s.order) FROM Stop s WHERE s.route.id = tr.route.id
+                )
+            """)
     List<Ticket> findNoShowEligibleTickets(
-        @Param("tripId") Long tripId,
-        @Param("cutoffTime") LocalDateTime cutoffTime
-    );
+            @Param("tripId") Long tripId,
+            @Param("cutoffTime") LocalDateTime cutoffTime);
 
     // Verificar si existe un ticket vendido para un viaje y asiento específico
     boolean existsByTripIdAndSeatNumberAndStatus(Long tripId, Integer seatNumber, Ticket.TicketStatus status);

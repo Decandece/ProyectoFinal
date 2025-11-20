@@ -20,22 +20,21 @@ public interface StopRepository extends JpaRepository<Stop, Long> {
 
     // Obtener el orden de una parada para validación de tramos
     @Query("""
-        SELECT s.order FROM Stop s
-        WHERE s.id = :stopId
-    """)
+                SELECT s.order FROM Stop s
+                WHERE s.id = :stopId
+            """)
     Integer getStopOrder(@Param("stopId") Long stopId);
 
-    // Validar que un tramo sea válido (fromStop debe venir antes que toStop en la misma ruta)
+    // Validar que un tramo sea válido
     @Query("""
-        SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
-        FROM Stop fs, Stop ts
-        WHERE fs.id = :fromStopId
-        AND ts.id = :toStopId
-        AND fs.route.id = ts.route.id
-        AND fs.order < ts.order
-    """)
+                SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
+                FROM Stop fs, Stop ts
+                WHERE fs.id = :fromStopId
+                AND ts.id = :toStopId
+                AND fs.route.id = ts.route.id
+                AND fs.order < ts.order
+            """)
     Boolean isValidSegment(
-        @Param("fromStopId") Long fromStopId,
-        @Param("toStopId") Long toStopId
-    );
+            @Param("fromStopId") Long fromStopId,
+            @Param("toStopId") Long toStopId);
 }

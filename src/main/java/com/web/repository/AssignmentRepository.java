@@ -29,7 +29,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
         @Param("date") LocalDate date
     );
 
-    // Verificar si el conductor está disponible (sin asignaciones conflictivas)
+    // Verificar si el conductor está disponible
     @Query("""
         SELECT CASE WHEN COUNT(a) = 0 THEN true ELSE false END
         FROM Assignment a
