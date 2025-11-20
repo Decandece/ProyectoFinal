@@ -47,6 +47,7 @@ class DispatcherOccupancyTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    // Verifica ocupación por tramo para el despachador
     @Test
     @WithMockUser(roles = "DISPATCHER")
     void getSeatAvailability_shouldReturnOccupancyBySegment() throws Exception {
@@ -71,6 +72,7 @@ class DispatcherOccupancyTest {
                 .andExpect(jsonPath("$[3].available").value(true));
     }
 
+    // Verifica que el detalle incluya porcentaje de ocupación
     @Test
     @WithMockUser(roles = "DISPATCHER")
     void getTripDetail_shouldIncludeOccupancyRate() throws Exception {
@@ -93,6 +95,7 @@ class DispatcherOccupancyTest {
                 .andExpect(jsonPath("$.bus.capacity").value(40));
     }
 
+    // Verifica comparación de ocupación entre múltiples tramos
     @Test
     @WithMockUser(roles = "DISPATCHER")
     void monitorMultipleSegments_shouldShowDifferentOccupancy() throws Exception {

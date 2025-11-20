@@ -45,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @Transactional
 class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
 
@@ -85,10 +86,10 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
 
         @BeforeEach
         void setUp() throws Exception {
-                // Limpiar datos previos (orden importante: primero dependientes, luego padres)
+
                 tripRepository.deleteAll();
                 seatRepository.deleteAll();
-                fareRuleRepository.deleteAll(); // Eliminar antes de rutas/paradas
+                fareRuleRepository.deleteAll();
                 stopRepository.deleteAll();
                 routeRepository.deleteAll();
                 busRepository.deleteAll();
@@ -129,9 +130,8 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
                 stopMedellin = stopRepository.save(stopMedellin);
                 toStopId = stopMedellin.getId();
 
-                // Nota: No es necesario crear FareRule. Si no existe, el sistema usa
-                // configService.getTicketBasePrice() como fallback (ver
-                // TicketServiceImpl.calculateFinalPrice)
+                // Nota: No es necesario crear FareRule, el sistema usa
+                // configService.getTicketBasePrice() como fallback
 
                 // Crear bus con capacidad 40 y placa única
                 String uniquePlate = "TEST-" + System.currentTimeMillis();
@@ -192,9 +192,11 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
                 passengerId = loginResponse.user().id();
         }
 
+        // Verifica flujo completo de compra: buscar viajes, ver asientos, crear hold,
+        // comprar ticket, verificar asiento ocupado
         @Test
         void completePurchaseFlow_shouldSucceed() throws Exception {
-                // Step 1: Buscar viajes disponibles (endpoint público)
+                // Buscar viajes disponibles
                 MvcResult searchResult = mvc.perform(get("/api/v1/trips")
                                 .param("routeId", routeId.toString())
                                 .param("date", LocalDate.now().plusDays(1).toString()))
@@ -209,13 +211,11 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
                 TripResponse selectedTrip = trips.get(0);
                 assertThat(selectedTrip.id()).isEqualTo(tripId);
                 assertThat(selectedTrip.busCapacity()).isEqualTo(40);
-                // soldSeats puede ser null si no se calcula en searchTrips, validamos que no
-                // sea mayor a la capacidad
                 if (selectedTrip.soldSeats() != null) {
-                        assertThat(selectedTrip.soldSeats()).isEqualTo(0); // Sin tickets vendidos aún
+                        assertThat(selectedTrip.soldSeats()).isEqualTo(0);
                 }
 
-                // Step 2: Ver disponibilidad de asientos para un tramo (endpoint público)
+                // Ver disponibilidad de asientos para tramo
                 MvcResult seatsResult = mvc.perform(get("/api/v1/trips/{tripId}/seats", tripId)
                                 .param("fromStopId", fromStopId.toString())
                                 .param("toStopId", toStopId.toString()))
@@ -227,14 +227,14 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
                                 om.getTypeFactory().constructCollectionType(List.class, SeatStatusResponse.class));
 
                 assertThat(seats).isNotEmpty();
-                assertThat(seats.size()).isEqualTo(40); // Todos los asientos del bus
+                assertThat(seats.size()).isEqualTo(40);
                 SeatStatusResponse availableSeat = seats.stream()
                                 .filter(SeatStatusResponse::available)
                                 .findFirst()
                                 .orElseThrow(() -> new AssertionError("No hay asientos disponibles"));
                 int seatNumber = availableSeat.seatNumber();
 
-                // Step 3: Crear hold de asiento (requiere autenticación)
+                // Crear hold de asiento
                 SeatHoldRequest holdRequest = new SeatHoldRequest(passengerId, fromStopId, toStopId);
                 MvcResult holdResult = mvc
                                 .perform(post("/api/v1/trips/{tripId}/seats/{seatNumber}/hold", tripId, seatNumber)
@@ -251,7 +251,7 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
                 assertThat(holdResponse.id()).isNotNull();
                 assertThat(holdResponse.expiresAt()).isAfter(LocalDateTime.now());
 
-                // Step 4: Comprar ticket usando el asiento en hold (requiere autenticación)
+                // Comprar ticket usando asiento en hold
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId, passengerId, seatNumber,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -273,9 +273,8 @@ class PassengerTripFlowIntegrationTest extends BaseIntegrationTest {
                                 TicketResponse.class);
                 assertThat(ticketResponse.id()).isNotNull();
                 assertThat(ticketResponse.qrCode()).isNotBlank();
-                // El QR code está codificado en Base64, no validamos el formato directamente
 
-                // Step 5: Verificar que el asiento ya no está disponible
+                // Verificar asiento ya no está disponible
                 MvcResult seatsAfterResult = mvc.perform(get("/api/v1/trips/{tripId}/seats", tripId)
                                 .param("fromStopId", fromStopId.toString())
                                 .param("toStopId", toStopId.toString()))

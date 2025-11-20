@@ -160,8 +160,7 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
 
                 LocalDateTime now = LocalDateTime.now();
 
-                // Crear viajes con diferentes tiempos hasta salida (usando horas exactas para
-                // evitar problemas)
+                // Crear viajes con diferentes tiempos hasta salida
                 Trip trip48h = Trip.builder()
                                 .route(route)
                                 .bus(bus)
@@ -242,10 +241,10 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
                 passengerId = loginResponse.user().id();
         }
 
-        // TEST: Cancelar ticket con más de 48 horas de anticipación debe reembolsar 90%
+        // Verifica cancelación 48h+: comprar ticket para viaje en 3 días, cancelar, debe reembolsar 90%
         @Test
         void cancelTicket_48HoursBefore_shouldRefund80Percent() throws Exception {
-                // 1. Comprar ticket para viaje en 3 días (más de 48h)
+                // Comprar ticket para viaje en 3 días (más de 48h)
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId48h, passengerId, 1,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -275,7 +274,7 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
 
                 TicketCancelResponse cancelResponse = om.readValue(cancelResult.getResponse().getContentAsString(),
                                 TicketCancelResponse.class);
-                // 3. Verificar que recibe 90% de reembolso (política 48h+)
+                // Verificar reembolso 90% (política 48h+)
                 BigDecimal expectedRefund = actualTicketPrice
                                 .multiply(new BigDecimal("0.90"))
                                 .setScale(2, RoundingMode.HALF_UP);
@@ -283,10 +282,10 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
                 assertThat(cancelResponse.refundPercentage()).isEqualTo(90);
         }
 
-        // TEST: Cancelar ticket entre 24-48 horas antes debe reembolsar 70%
+        // Verifica cancelación 24-48h: comprar ticket para viaje en 2 días, cancelar, debe reembolsar 70%
         @Test
         void cancelTicket_24HoursBefore_shouldRefund50Percent() throws Exception {
-                // 1. Comprar ticket para viaje en 2 días (24-48h de anticipación)
+                // Comprar ticket para viaje en 2 días (24-48h)
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId24h, passengerId, 2,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -316,17 +315,17 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
 
                 TicketCancelResponse cancelResponse = om.readValue(cancelResult.getResponse().getContentAsString(),
                                 TicketCancelResponse.class);
-                // Debería reembolsar 70% del precio real del ticket
+                // Verificar reembolso 70%
                 BigDecimal expectedRefund = actualTicketPrice
                                 .multiply(new BigDecimal("0.70"))
                                 .setScale(2, RoundingMode.HALF_UP);
                 assertThat(cancelResponse.refundAmount()).isEqualByComparingTo(expectedRefund);
         }
 
-        // TEST: Cancelar ticket entre 12-24 horas antes debe reembolsar 50%
+        // Verifica cancelación 12-24h: comprar ticket para viaje en 1 día, cancelar, debe reembolsar 50%
         @Test
         void cancelTicket_12HoursBefore_shouldRefund50Percent() throws Exception {
-                // 1. Comprar ticket para viaje en 1 día (12-24h de anticipación)
+                // Comprar ticket para viaje en 1 día (12-24h)
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId12h, passengerId, 3,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -356,16 +355,17 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
 
                 TicketCancelResponse cancelResponse = om.readValue(cancelResult.getResponse().getContentAsString(),
                                 TicketCancelResponse.class);
-                // Debería reembolsar 50% del precio real del ticket
+                // Verificar reembolso 50%
                 BigDecimal expectedRefund = actualTicketPrice
                                 .multiply(new BigDecimal("0.50"))
                                 .setScale(2, RoundingMode.HALF_UP);
                 assertThat(cancelResponse.refundAmount()).isEqualByComparingTo(expectedRefund);
         }
 
+        // Verifica cancelación 6-12h: comprar ticket para viaje en 8 horas, cancelar, debe reembolsar 30%
         @Test
         void cancelTicket_6HoursBefore_shouldRefund30Percent() throws Exception {
-                // Crear ticket para viaje en 8 horas (más de 6h pero menos de 12h)
+                // Comprar ticket para viaje en 8 horas (6-12h)
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId6h, passengerId, 4,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -395,17 +395,17 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
 
                 TicketCancelResponse cancelResponse = om.readValue(cancelResult.getResponse().getContentAsString(),
                                 TicketCancelResponse.class);
-                // Debería reembolsar 30% del precio real del ticket
+                // Verificar reembolso 30%
                 BigDecimal expectedRefund = actualTicketPrice
                                 .multiply(new BigDecimal("0.30"))
                                 .setScale(2, RoundingMode.HALF_UP);
                 assertThat(cancelResponse.refundAmount()).isEqualByComparingTo(expectedRefund);
         }
 
-        // TEST: Cancelar ticket con menos de 6 horas debe reembolsar 10%
+        // Verifica cancelación <6h: comprar ticket para viaje en 3 horas, cancelar, debe reembolsar 0%
         @Test
         void cancelTicket_Less6Hours_shouldRefund0Percent() throws Exception {
-                // 1. Comprar ticket para viaje en 3 horas (menos de 6h de anticipación)
+                // Comprar ticket para viaje en 3 horas (menos de 6h)
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripIdLess6h, passengerId, 5,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -430,6 +430,6 @@ class PassengerCancellationIntegrationTest extends BaseIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.refundPercentage").value(0))
-                                .andExpect(jsonPath("$.refundAmount").value(0.0)); // 0% de 100000
+                                .andExpect(jsonPath("$.refundAmount").value(0.0));
         }
 }

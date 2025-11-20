@@ -84,10 +84,10 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Limpiar datos (orden importante: primero dependientes, luego padres)
+
         tripRepository.deleteAll();
         seatRepository.deleteAll();
-        fareRuleRepository.deleteAll(); // Eliminar antes de rutas/paradas
+        fareRuleRepository.deleteAll();
         stopRepository.deleteAll();
         routeRepository.deleteAll();
         busRepository.deleteAll();
@@ -209,14 +209,15 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
         passengerId = passengerLoginResponse.user().id();
     }
 
-    // TEST: Configurar overbooking permite vender más tickets que la capacidad del bus
+    /* Verifica que overbooking permite vender más tickets: Admin configura 5%, bus 40 asientos → límite 42 tickets,
+    comprar 42 OK, comprar 43 falla
+    */
     @Test
     void configureOverbooking_shouldAffectTicketPurchases() throws Exception {
-        // 1. Admin configura overbooking al 5%
-        // Bus de 40 asientos → límite con overbooking: 40 × 1.05 = 42 tickets
+        // Admin configura overbooking 5% (bus 40 → límite 42 tickets)
         ConfigUpdateRequest configUpdate = new ConfigUpdateRequest(
                 null, null, null, null, null, null,
-                null, 0.05, // overbookingMaxPercentage = 5%
+                null, 0.05,
                 null, null, null, null, null,
                 null, null, null, null
         );
@@ -228,7 +229,7 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.overbookingMaxPercentage").value(0.05));
 
-        // Verificar configuración
+        // Verificar configuración guardada
         MvcResult configResult = mvc.perform(get("/api/v1/admin/config")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -237,7 +238,7 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
         ConfigResponse config = om.readValue(configResult.getResponse().getContentAsString(), ConfigResponse.class);
         assertThat(config.overbookingMaxPercentage()).isEqualTo(0.05);
 
-        // 2. Comprar 42 tickets (hasta el límite con overbooking)
+        // Comprar 42 tickets (hasta límite con overbooking)
         for (int i = 1; i <= 42; i++) {
             TicketCreateRequest ticketRequest = new TicketCreateRequest(
                     tripId, passengerId, i,
@@ -254,7 +255,7 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
                     .andExpect(status().isCreated());
         }
 
-        // 3. Intentar comprar el ticket #43 debe fallar (excede límite de overbooking)
+        // Intentar comprar ticket #43 debe fallar (excede límite)
         TicketCreateRequest excessTicketRequest = new TicketCreateRequest(
                 tripId, passengerId, 43,
                 fromStopId, "Terminal Bogotá", 1,
@@ -271,13 +272,13 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("overbooking")));
     }
 
-    // TEST: Configurar overbooking a 0% debe permitir solo hasta la capacidad exacta del bus
+    // Verifica que overbooking 0% solo permite capacidad exacta: Admin configura 0%, comprar 40 OK, comprar 41 falla
     @Test
     void configureOverbookingToZero_shouldNotAllowOverbooking() throws Exception {
-        // 1. Admin configura overbooking a 0% (sin sobreventa)
+        // Admin configura overbooking 0% (sin sobreventa)
         ConfigUpdateRequest configUpdate = new ConfigUpdateRequest(
                 null, null, null, null, null, null,
-                null, 0.0, // overbookingMaxPercentage = 0%
+                null, 0.0,
                 null, null, null, null, null,
                 null, null, null, null
         );
@@ -288,7 +289,7 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
                         .content(om.writeValueAsString(configUpdate)))
                 .andExpect(status().isOk());
 
-        // 2. Comprar 40 tickets (capacidad exacta del bus)
+        // Comprar 40 tickets (capacidad exacta)
         for (int i = 1; i <= busCapacity; i++) {
             TicketCreateRequest ticketRequest = new TicketCreateRequest(
                     tripId, passengerId, i,
@@ -305,7 +306,7 @@ class DispatcherOverbookingIntegrationTest extends BaseIntegrationTest {
                     .andExpect(status().isCreated());
         }
 
-        // 3. Intentar comprar el ticket #41 debe fallar (sin overbooking no hay extras)
+        // Intentar comprar ticket #41 debe fallar (sin overbooking)
         TicketCreateRequest excessTicketRequest = new TicketCreateRequest(
                 tripId, passengerId, busCapacity + 1,
                 fromStopId, "Terminal Bogotá", 1,

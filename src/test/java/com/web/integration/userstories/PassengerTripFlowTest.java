@@ -72,9 +72,10 @@ class PassengerTripFlowTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    // Verifica que el pasajero pueda buscar viajes con cupos
     @Test
     void searchTrips_shouldReturnAvailableTrips() throws Exception {
-        // Este endpoint es público, no requiere autenticación
+
         // Given: Viajes disponibles con asientos libres
         var trip1 = new TripResponse(
                 1L, 1L, "Bogotá - Medellín", "Bogotá", "Medellín",
@@ -105,6 +106,7 @@ class PassengerTripFlowTest {
                 .andExpect(jsonPath("$[1].busCapacity").value(45));
     }
 
+    // Verifica que el pasajero pueda ver asientos disponibles por tramo
     @Test
     void getSeatAvailability_shouldReturnAvailableSeats() throws Exception {
         // Este endpoint es público, no requiere autenticación
@@ -131,6 +133,7 @@ class PassengerTripFlowTest {
                 .andExpect(jsonPath("$[2].available").value(true));
     }
 
+    // Verifica que un pasajero reserve un asiento por 10 minutos
     @Test
     @WithMockUser(roles = "PASSENGER")
     void holdSeat_shouldReserveFor10Minutes() throws Exception {
@@ -155,6 +158,7 @@ class PassengerTripFlowTest {
                 .andExpect(jsonPath("$.status").value("HOLD"));
     }
 
+    // Verifica compra exitosa de ticket con segmento válido
     @Test
     @WithMockUser(roles = "PASSENGER")
     void purchaseTicket_shouldSucceedWithValidSegment() throws Exception {
@@ -185,6 +189,7 @@ class PassengerTripFlowTest {
                 .andExpect(jsonPath("$.qrCode").value("TKT-2025-001-ABC123"));
     }
 
+    // Verifica error cuando el asiento ya está ocupado
     @Test
     @WithMockUser(roles = "PASSENGER")
     void purchaseTicket_shouldFailWhenSeatOccupied() throws Exception {
@@ -205,6 +210,7 @@ class PassengerTripFlowTest {
                 .andExpect(jsonPath("$.message").value("El asiento 10 ya está ocupado en el tramo Bogotá - Medellín"));
     }
 
+    // Verifica bloqueo por superar el límite de overbooking
     @Test
     @WithMockUser(roles = "PASSENGER")
     void purchaseTicket_shouldFailWhenOverbookingLimit() throws Exception {

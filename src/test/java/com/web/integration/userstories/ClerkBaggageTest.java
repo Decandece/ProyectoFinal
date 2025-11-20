@@ -60,6 +60,7 @@ class ClerkBaggageTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    // Verifica que el cajero registre equipaje con peso y tag
     @Test
     @WithMockUser(roles = "CLERK")
     void registerBaggage_shouldCreateWithWeightAndTag() throws Exception {
@@ -96,6 +97,7 @@ class ClerkBaggageTest {
                 .andExpect(jsonPath("$.baggage.tagCode").value(org.hamcrest.Matchers.startsWith("BAG-")));
     }
 
+    // Verifica cálculo de fee cuando se excede el peso base
     @Test
     @WithMockUser(roles = "CLERK")
     void registerBaggage_shouldCalculateExcessFee() throws Exception {
@@ -131,6 +133,7 @@ class ClerkBaggageTest {
                 .andExpect(jsonPath("$.baggage.weightKg").value(25.0));
     }
 
+    // Verifica generación de tags únicos por equipaje
     @Test
     @WithMockUser(roles = "CLERK")
     void registerBaggage_shouldGenerateUniqueTag() throws Exception {
@@ -165,6 +168,7 @@ class ClerkBaggageTest {
                 .andExpect(jsonPath("$.baggage.tagCode").value(org.hamcrest.Matchers.startsWith("BAG-")));
     }
 
+    // Verifica rechazo cuando el peso supera el límite
     @Test
     @WithMockUser(roles = "CLERK")
     void registerBaggage_shouldFailWhenWeightExceedsLimit() throws Exception {

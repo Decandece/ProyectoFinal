@@ -87,10 +87,10 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Limpiar datos (orden importante: primero dependientes, luego padres)
+
         tripRepository.deleteAll();
         seatRepository.deleteAll();
-        fareRuleRepository.deleteAll(); // Eliminar antes de rutas/paradas
+        fareRuleRepository.deleteAll();
         stopRepository.deleteAll();
         routeRepository.deleteAll();
         busRepository.deleteAll();
@@ -264,10 +264,10 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
         ticketQrCode = ticketResponse.qrCode();
     }
 
-    // TEST: Validar QR de ticket mediante código QR (abordaje online)
+    // Verifica validación de QR: conductor escanea QR del ticket, obtiene detalles del pasajero
     @Test
     void validateQrCode_shouldReturnTicketDetails() throws Exception {
-        // 1. Conductor escanea el QR del ticket y obtiene detalles del pasajero
+        // Conductor escanea QR y obtiene detalles
         MvcResult qrResult = mvc.perform(get("/api/v1/tickets/qr/{qrCode}", ticketQrCode)
                         .header("Authorization", "Bearer " + driverToken))
                 .andExpect(status().isOk())
@@ -276,22 +276,22 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.status").value("SOLD"))
                 .andReturn();
 
-        // 2. Verificar que el ticket devuelto corresponde al QR escaneado
+        // Verificar ticket corresponde al QR escaneado
         TicketResponse ticketResponse = om.readValue(qrResult.getResponse().getContentAsString(), TicketResponse.class);
         assertThat(ticketResponse.qrCode()).isEqualTo(ticketQrCode);
         assertThat(ticketResponse.passengerId()).isEqualTo(passengerId);
     }
 
-    // TEST: Abrir proceso de abordaje cambia el estado del viaje a BOARDING
+    // Verifica que abrir abordaje cambia estado: despachador abre abordaje, estado cambia a BOARDING
     @Test
     void openBoarding_shouldChangeTripStatus() throws Exception {
-        // 1. Despachador abre el proceso de abordaje para el viaje
+        // Despachador abre proceso de abordaje
         mvc.perform(post("/api/v1/trips/{tripId}/boarding/open", tripId)
                         .header("Authorization", "Bearer " + dispatcherToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("BOARDING"));
 
-        // 2. Verificar que el estado del viaje cambió correctamente a BOARDING
+        // Verificar estado cambió a BOARDING
         MvcResult tripResult = mvc.perform(get("/api/v1/trips/{tripId}", tripId)
                         .header("Authorization", "Bearer " + driverToken))
                 .andExpect(status().isOk())
@@ -301,10 +301,10 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
         assertThat(tripResponse.status()).isEqualTo(com.web.entity.Trip.TripStatus.BOARDING);
     }
 
-    // TEST: Obtener lista de pasajeros filtrada por tramo específico
+    // Verifica lista de pasajeros por tramo: conductor consulta pasajeros para tramo Bogotá→Medellín, solo aparece pasajero de ese tramo
     @Test
     void getPassengersBySegment_shouldReturnPassengerList() throws Exception {
-        // 1. Conductor consulta lista de pasajeros para el tramo Bogotá → Medellín
+        // Conductor consulta lista de pasajeros para tramo Bogotá → Medellín
         MvcResult passengersResult = mvc.perform(get("/api/v1/trips/{tripId}/passengers", tripId)
                         .param("fromStopId", fromStopId.toString())
                         .param("toStopId", toStopId.toString())
@@ -317,7 +317,7 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
                 om.getTypeFactory().constructCollectionType(List.class, TicketResponse.class)
         );
 
-        // 2. Verificar que solo aparece el pasajero de ese tramo específico
+        // Verificar solo aparece pasajero de ese tramo
         assertThat(passengers).hasSize(1);
         assertThat(passengers.get(0).passengerId()).isEqualTo(passengerId);
         assertThat(passengers.get(0).seatNumber()).isEqualTo(1);
@@ -325,22 +325,22 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
         assertThat(passengers.get(0).toStopId()).isEqualTo(toStopId);
     }
 
-    // TEST: Flujo completo de abordaje desde apertura hasta cierre
+    // Verifica flujo completo de abordaje: despachador abre, conductor valida QR, consulta pasajeros, despachador cierra
     @Test
     void completeBoardingFlow_shouldSucceed() throws Exception {
-        // 1. Despachador abre el proceso de abordaje
+        // Despachador abre abordaje
         mvc.perform(post("/api/v1/trips/{tripId}/boarding/open", tripId)
                         .header("Authorization", "Bearer " + dispatcherToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("BOARDING"));
 
-        // 2. Conductor valida el QR del pasajero
+        // Conductor valida QR del pasajero
         mvc.perform(get("/api/v1/tickets/qr/{qrCode}", ticketQrCode)
                         .header("Authorization", "Bearer " + driverToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.qrCode").value(ticketQrCode));
 
-        // 3. Conductor consulta la lista de pasajeros del tramo
+        // Conductor consulta lista de pasajeros del tramo
         MvcResult passengersResult = mvc.perform(get("/api/v1/trips/{tripId}/passengers", tripId)
                         .param("fromStopId", fromStopId.toString())
                         .param("toStopId", toStopId.toString())
@@ -354,10 +354,10 @@ class DriverBoardingIntegrationTest extends BaseIntegrationTest {
         );
         assertThat(passengers).hasSize(1);
 
-        // 4. Despachador cierra el proceso de abordaje
+        // Despachador cierra proceso de abordaje
         mvc.perform(post("/api/v1/trips/{tripId}/boarding/close", tripId)
                         .header("Authorization", "Bearer " + dispatcherToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("BOARDING")); // Sigue en BOARDING hasta partir
+                .andExpect(jsonPath("$.status").value("BOARDING"));
     }
 }

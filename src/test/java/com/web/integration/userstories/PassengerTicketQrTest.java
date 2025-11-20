@@ -65,7 +65,7 @@ class PassengerTicketQrTest {
 
     @BeforeEach
     void setUp() {
-        // Mockear UserRepository para getMyTickets() en TicketController
+
         User passenger = User.builder()
                 .id(1L)
                 .email("passenger@test.com")
@@ -77,6 +77,7 @@ class PassengerTicketQrTest {
         when(userRepository.findByEmail("passenger@test.com")).thenReturn(Optional.of(passenger));
     }
 
+    // Verifica que la compra devuelva un código QR válido
     @Test
     @WithMockUser(roles = "PASSENGER")
     void purchaseTicket_shouldReturnQrCode() throws Exception {
@@ -106,6 +107,7 @@ class PassengerTicketQrTest {
                 .andExpect(jsonPath("$.qrCode").value(org.hamcrest.Matchers.startsWith("TKT-")));
     }
 
+    // Verifica que al consultar ticket se recupere el QR
     @Test
     @WithMockUser(roles = "PASSENGER")
     void getTicket_shouldIncludeQrCode() throws Exception {
@@ -129,6 +131,7 @@ class PassengerTicketQrTest {
                 .andExpect(jsonPath("$.qrCode").value("TKT-2025-001-ABC123"));
     }
 
+    // Verifica que la lista de tickets propios incluya QR
     @Test
     @WithMockUser(username = "passenger@test.com", roles = "PASSENGER")
     void getMyTickets_shouldIncludeQrCodes() throws Exception {

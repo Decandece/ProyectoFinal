@@ -82,10 +82,10 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Limpiar datos (orden importante: primero dependientes, luego padres)
+
         tripRepository.deleteAll();
         seatRepository.deleteAll();
-        fareRuleRepository.deleteAll(); // Eliminar antes de rutas/paradas
+        fareRuleRepository.deleteAll();
         stopRepository.deleteAll();
         routeRepository.deleteAll();
         busRepository.deleteAll();
@@ -182,10 +182,10 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
         passengerId = loginResponse.user().id();
     }
 
-    // TEST: Cada ticket debe tener un código QR único generado automáticamente
+    // Verifica que cada ticket tiene QR único: crear 5 tickets, todos deben tener QR diferentes
     @Test
     void purchaseTicket_shouldGenerateUniqueQrCode() throws Exception {
-        // 1. Crear 5 tickets para el mismo viaje y coleccionar sus QR codes
+        // Crear 5 tickets y coleccionar QR codes
         Set<String> qrCodes = new HashSet<>();
         int numberOfTickets = 5;
 
@@ -210,11 +210,11 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
             TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(), TicketResponse.class);
             String qrCode = ticketResponse.qrCode();
 
-            // 2. Verificar que cada QR es único (no se repite)
+            // Verificar QR único (no se repite)
             assertThat(qrCodes).doesNotContain(qrCode);
             qrCodes.add(qrCode);
 
-            // Validar que el QR code no está vacío (está en Base64)
+            // Validar QR no vacío (Base64)
             assertThat(qrCode).isNotBlank();
             assertThat(qrCode.length()).isGreaterThan(10);
         }
@@ -222,10 +222,10 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
         assertThat(qrCodes.size()).isEqualTo(numberOfTickets);
     }
 
-    // TEST: Al consultar un ticket por ID, debe incluir el código QR
+    // Verifica que GET /tickets/{id} incluye QR: comprar ticket, consultar por ID, debe incluir QR
     @Test
     void getTicket_shouldIncludeQrCode() throws Exception {
-        // 1. Comprar un ticket
+        // Comprar ticket
         TicketCreateRequest ticketRequest = new TicketCreateRequest(
                 tripId, passengerId, 1,
                 fromStopId, "Terminal Bogotá", 1,
@@ -245,7 +245,7 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
         Long ticketId = ticketResponse.id();
         String qrCode = ticketResponse.qrCode();
 
-        // 2. Consultar el ticket por ID y verificar que incluye el QR
+        // Consultar ticket por ID y verificar incluye QR
         mvc.perform(get("/api/v1/tickets/{id}", ticketId)
                         .header("Authorization", "Bearer " + passengerToken))
                 .andExpect(status().isOk())
@@ -254,10 +254,10 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.qrCode").exists());
     }
 
-    // TEST: La lista de tickets del usuario debe incluir los códigos QR de todos
+    // Verifica que GET /tickets/my-tickets incluye QR de todos: comprar 3 tickets, consultar lista, todos deben tener QR
     @Test
     void getMyTickets_shouldIncludeQrCodes() throws Exception {
-        // 1. Comprar 3 tickets para el mismo usuario
+        // Comprar 3 tickets
         for (int i = 1; i <= 3; i++) {
             TicketCreateRequest ticketRequest = new TicketCreateRequest(
                     tripId, passengerId, i,
@@ -274,7 +274,7 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
                     .andExpect(status().isCreated());
         }
 
-        // 2. Consultar todos los tickets del usuario
+        // Consultar todos los tickets del usuario
         MvcResult myTicketsResult = mvc.perform(get("/api/v1/tickets/my-tickets")
                         .header("Authorization", "Bearer " + passengerToken))
                 .andExpect(status().isOk())
@@ -288,7 +288,6 @@ class PassengerTicketQrIntegrationTest extends BaseIntegrationTest {
         assertThat(tickets).hasSize(3);
         for (TicketResponse ticket : tickets) {
             assertThat(ticket.qrCode()).isNotBlank();
-            // QR code está en Base64, no empieza con TKT-
         }
     }
 }

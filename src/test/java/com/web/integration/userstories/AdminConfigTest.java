@@ -33,7 +33,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
 @WebMvcTest(controllers = AdminController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AdminConfigTest {
@@ -73,12 +72,7 @@ class AdminConfigTest {
                 when(userRepository.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
         }
 
-        /**
-         * TEST 1: Verificar que el admin puede obtener toda la configuración del
-         * sistema
-         * - Debe retornar políticas de reembolso, descuentos y precios
-         * - Status esperado: 200 OK
-         */
+        // Verifica que admin puede obtener toda la configuración del sistema
         @Test
         @WithMockUser(username = "admin@test.com", roles = "ADMIN")
         void getConfig_shouldReturnAllPolicies() throws Exception {
@@ -114,11 +108,7 @@ class AdminConfigTest {
                                 .andExpect(jsonPath("$.ticketPriceMultiplierPeakHours").value(1.2));
         }
 
-        /**
-         * TEST 2: Verificar que el admin puede actualizar las políticas de reembolso
-         * - Cambia los porcentajes de reembolso según el tiempo de anticipación
-         * - Status esperado: 200 OK
-         */
+        // Verifica que admin puede actualizar políticas de reembolso
         @Test
         @WithMockUser(username = "admin@test.com", roles = "ADMIN")
         void updateRefundPolicies_shouldPersist() throws Exception {
@@ -159,12 +149,7 @@ class AdminConfigTest {
                                 .andExpect(jsonPath("$.refundPercentageLess6Hours").value(5));
         }
 
-        /**
-         * TEST 3: Verificar que el admin puede actualizar los descuentos por tipo de
-         * pasajero
-         * - Cambia descuentos para STUDENT, SENIOR y CHILD
-         * - Status esperado: 200 OK
-         */
+        // Verifica que admin puede actualizar descuentos por tipo de pasajero
         @Test
         @WithMockUser(username = "admin@test.com", roles = "ADMIN")
         void updateDiscounts_shouldPersist() throws Exception {
@@ -203,11 +188,7 @@ class AdminConfigTest {
                                 .andExpect(jsonPath("$.discountPercentages.CHILD").value(15));
         }
 
-        /**
-         * TEST 4: Verificar que el admin puede actualizar los multiplicadores de precio
-         * - Cambia precio base y multiplicadores de demanda/hora pico
-         * - Status esperado: 200 OK
-         */
+        // Verifica que admin puede actualizar multiplicadores de precio
         @Test
         @WithMockUser(username = "admin@test.com", roles = "ADMIN")
         void updatePriceMultipliers_shouldPersist() throws Exception {
@@ -247,12 +228,7 @@ class AdminConfigTest {
                                 .andExpect(jsonPath("$.ticketPriceMultiplierMediumDemand").value(1.1));
         }
 
-        /**
-         * TEST 5: Verificar que solo usuarios con rol ADMIN pueden actualizar
-         * configuración
-         * - Valida la seguridad a nivel de endpoint
-         * - Status esperado: 200 OK (porque deshabilitamos filtros de seguridad)
-         */
+        // Verifica que solo usuarios ADMIN pueden actualizar configuración
         @Test
         @WithMockUser(username = "admin@test.com", roles = "ADMIN")
         void updateConfig_shouldRequireAdminRole() throws Exception {

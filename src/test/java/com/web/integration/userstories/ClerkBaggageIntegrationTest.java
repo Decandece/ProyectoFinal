@@ -47,263 +47,263 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ClerkBaggageIntegrationTest extends BaseIntegrationTest {
 
-    @Autowired
-    private MockMvc mvc;
+        @Autowired
+        private MockMvc mvc;
 
-    @Autowired
-    private ObjectMapper om;
+        @Autowired
+        private ObjectMapper om;
 
-    @Autowired
-    private RouteRepository routeRepository;
+        @Autowired
+        private RouteRepository routeRepository;
 
-    @Autowired
-    private StopRepository stopRepository;
+        @Autowired
+        private StopRepository stopRepository;
 
-    @Autowired
-    private BusRepository busRepository;
+        @Autowired
+        private BusRepository busRepository;
 
-    @Autowired
-    private SeatRepository seatRepository;
+        @Autowired
+        private SeatRepository seatRepository;
 
-    @Autowired
-    private TripRepository tripRepository;
+        @Autowired
+        private TripRepository tripRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
-    @Autowired
-    private FareRuleRepository fareRuleRepository;
+        @Autowired
+        private FareRuleRepository fareRuleRepository;
 
-    private String clerkToken;
-    private Long clerkId;
-    private Long passengerId;
-    private Long tripId;
-    private Long fromStopId;
-    private Long toStopId;
+        private String clerkToken;
+        private Long clerkId;
+        private Long passengerId;
+        private Long tripId;
+        private Long fromStopId;
+        private Long toStopId;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        // Limpiar datos (orden importante: primero dependientes, luego padres)
-        tripRepository.deleteAll();
-        seatRepository.deleteAll();
-        fareRuleRepository.deleteAll(); // Eliminar antes de rutas/paradas
-        stopRepository.deleteAll();
-        routeRepository.deleteAll();
-        busRepository.deleteAll();
-        userRepository.deleteAll();
+        @BeforeEach
+        void setUp() throws Exception {
 
-        // Crear ruta con código único
-        String uniqueCode = "TEST-" + System.currentTimeMillis();
-        Route route = Route.builder()
-                .code(uniqueCode)
-                .name("Bogotá - Medellín")
-                .origin("Bogotá")
-                .destination("Medellín")
-                .distanceKm(new BigDecimal("450.0"))
-                .durationMin(480)
-                .isActive(true)
-                .build();
-        route = routeRepository.save(route);
+                tripRepository.deleteAll();
+                seatRepository.deleteAll();
+                fareRuleRepository.deleteAll();
+                stopRepository.deleteAll();
+                routeRepository.deleteAll();
+                busRepository.deleteAll();
+                userRepository.deleteAll();
 
-        // Crear paradas
-        var stopBogota = com.web.entity.Stop.builder()
-                .route(route)
-                .name("Terminal Bogotá")
-                .order(1)
-                .latitude(new BigDecimal("4.6097"))
-                .longitude(new BigDecimal("-74.0817"))
-                .build();
-        stopBogota = stopRepository.save(stopBogota);
-        fromStopId = stopBogota.getId();
+                // Crear ruta con código único
+                String uniqueCode = "TEST-" + System.currentTimeMillis();
+                Route route = Route.builder()
+                                .code(uniqueCode)
+                                .name("Bogotá - Medellín")
+                                .origin("Bogotá")
+                                .destination("Medellín")
+                                .distanceKm(new BigDecimal("450.0"))
+                                .durationMin(480)
+                                .isActive(true)
+                                .build();
+                route = routeRepository.save(route);
 
-        var stopMedellin = com.web.entity.Stop.builder()
-                .route(route)
-                .name("Terminal Medellín")
-                .order(2)
-                .latitude(new BigDecimal("6.2476"))
-                .longitude(new BigDecimal("-75.5658"))
-                .build();
-        stopMedellin = stopRepository.save(stopMedellin);
-        toStopId = stopMedellin.getId();
+                // Crear paradas
+                var stopBogota = com.web.entity.Stop.builder()
+                                .route(route)
+                                .name("Terminal Bogotá")
+                                .order(1)
+                                .latitude(new BigDecimal("4.6097"))
+                                .longitude(new BigDecimal("-74.0817"))
+                                .build();
+                stopBogota = stopRepository.save(stopBogota);
+                fromStopId = stopBogota.getId();
 
-        // Crear bus
-        Bus bus = Bus.builder()
-                .plate("TEST-001")
-                .capacity(40)
-                .amenities(new HashMap<>())
-                .status(Bus.BusStatus.ACTIVE)
-                .build();
-        bus = busRepository.save(bus);
+                var stopMedellin = com.web.entity.Stop.builder()
+                                .route(route)
+                                .name("Terminal Medellín")
+                                .order(2)
+                                .latitude(new BigDecimal("6.2476"))
+                                .longitude(new BigDecimal("-75.5658"))
+                                .build();
+                stopMedellin = stopRepository.save(stopMedellin);
+                toStopId = stopMedellin.getId();
 
-        // Crear asientos
-        for (int i = 1; i <= 40; i++) {
-            Seat seat = Seat.builder()
-                    .bus(bus)
-                    .seatNumber(i)
-                    .seatType(Seat.SeatType.STANDARD)
-                    .build();
-            seatRepository.save(seat);
+                // Crear bus
+                Bus bus = Bus.builder()
+                                .plate("TEST-001")
+                                .capacity(40)
+                                .amenities(new HashMap<>())
+                                .status(Bus.BusStatus.ACTIVE)
+                                .build();
+                bus = busRepository.save(bus);
+
+                // Crear asientos
+                for (int i = 1; i <= 40; i++) {
+                        Seat seat = Seat.builder()
+                                        .bus(bus)
+                                        .seatNumber(i)
+                                        .seatType(Seat.SeatType.STANDARD)
+                                        .build();
+                        seatRepository.save(seat);
+                }
+
+                // Crear viaje
+                LocalDate tomorrow = LocalDate.now().plusDays(1);
+                Trip trip = Trip.builder()
+                                .route(route)
+                                .bus(bus)
+                                .tripDate(tomorrow)
+                                .departureTime(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0))
+                                .arrivalEta(LocalDateTime.now().plusDays(1).withHour(16).withMinute(0))
+                                .status(Trip.TripStatus.SCHEDULED)
+                                .build();
+                trip = tripRepository.save(trip);
+                tripId = trip.getId();
+
+                // Registrar CLERK
+                RegisterRequest clerkRegister = new RegisterRequest(
+                                "Test Clerk",
+                                "clerk@test.com",
+                                "1111111111",
+                                "password123",
+                                User.Role.CLERK);
+                mvc.perform(post("/api/v1/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(om.writeValueAsString(clerkRegister)))
+                                .andExpect(status().isCreated());
+
+                LoginRequest clerkLogin = new LoginRequest("clerk@test.com", "password123");
+                MvcResult clerkLoginResult = mvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(om.writeValueAsString(clerkLogin)))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                LoginResponse clerkLoginResponse = om.readValue(clerkLoginResult.getResponse().getContentAsString(),
+                                LoginResponse.class);
+                clerkToken = clerkLoginResponse.token();
+                clerkId = clerkLoginResponse.user().id();
+
+                // Registrar pasajero
+                RegisterRequest passengerRegister = new RegisterRequest(
+                                "Test Passenger",
+                                "passenger@test.com",
+                                "2222222222",
+                                "password123",
+                                User.Role.PASSENGER);
+                mvc.perform(post("/api/v1/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(om.writeValueAsString(passengerRegister)))
+                                .andExpect(status().isCreated());
+
+                LoginRequest passengerLogin = new LoginRequest("passenger@test.com", "password123");
+                MvcResult passengerLoginResult = mvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(om.writeValueAsString(passengerLogin)))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                LoginResponse passengerLoginResponse = om.readValue(
+                                passengerLoginResult.getResponse().getContentAsString(), LoginResponse.class);
+                passengerId = passengerLoginResponse.user().id();
         }
 
-        // Crear viaje
-        LocalDate tomorrow = LocalDate.now().plusDays(1);
-        Trip trip = Trip.builder()
-                .route(route)
-                .bus(bus)
-                .tripDate(tomorrow)
-                .departureTime(LocalDateTime.now().plusDays(1).withHour(8).withMinute(0))
-                .arrivalEta(LocalDateTime.now().plusDays(1).withHour(16).withMinute(0))
-                .status(Trip.TripStatus.SCHEDULED)
-                .build();
-        trip = tripRepository.save(trip);
-        tripId = trip.getId();
+        // Verifica registro de equipaje dentro del límite: 15kg (límite 20kg), sin exceso, genera tag único BAG-XXX
+        @Test
+        void purchaseTicket_withBaggage_shouldRegisterBaggageAndCalculateFee() throws Exception {
+                // Comprar ticket con equipaje 15kg (sin exceso)
+                BaggageCreateRequest baggageRequest = new BaggageCreateRequest(new BigDecimal("15.0"), null);
+                TicketCreateRequest ticketRequest = new TicketCreateRequest(
+                                tripId, passengerId, 1,
+                                fromStopId, "Terminal Bogotá", 1,
+                                toStopId, "Terminal Medellín", 2,
+                                new BigDecimal("50000"), Ticket.PaymentMethod.CARD,
+                                baggageRequest, "ADULT");
 
-        // Registrar CLERK
-        RegisterRequest clerkRegister = new RegisterRequest(
-                "Test Clerk",
-                "clerk@test.com",
-                "1111111111",
-                "password123",
-                User.Role.CLERK
-        );
-        mvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(clerkRegister)))
-                .andExpect(status().isCreated());
+                MvcResult purchaseResult = mvc.perform(post("/api/v1/trips/{tripId}/tickets", tripId)
+                                .header("Authorization", "Bearer " + clerkToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(om.writeValueAsString(ticketRequest)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.baggage").exists())
+                                .andExpect(jsonPath("$.baggage.weightKg").value(15.0))
+                                .andExpect(jsonPath("$.baggage.excessFee").value(0.0))
+                                .andExpect(jsonPath("$.baggage.tagCode").exists())
+                                .andExpect(jsonPath("$.baggage.tagCode")
+                                                .value(org.hamcrest.Matchers.startsWith("BAG-")))
+                                .andReturn();
 
-        LoginRequest clerkLogin = new LoginRequest("clerk@test.com", "password123");
-        MvcResult clerkLoginResult = mvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(clerkLogin)))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        LoginResponse clerkLoginResponse = om.readValue(clerkLoginResult.getResponse().getContentAsString(), LoginResponse.class);
-        clerkToken = clerkLoginResponse.token();
-        clerkId = clerkLoginResponse.user().id();
-
-        // Registrar pasajero
-        RegisterRequest passengerRegister = new RegisterRequest(
-                "Test Passenger",
-                "passenger@test.com",
-                "2222222222",
-                "password123",
-                User.Role.PASSENGER
-        );
-        mvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(passengerRegister)))
-                .andExpect(status().isCreated());
-
-        LoginRequest passengerLogin = new LoginRequest("passenger@test.com", "password123");
-        MvcResult passengerLoginResult = mvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(passengerLogin)))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        LoginResponse passengerLoginResponse = om.readValue(passengerLoginResult.getResponse().getContentAsString(), LoginResponse.class);
-        passengerId = passengerLoginResponse.user().id();
-    }
-
-    // TEST: Registrar equipaje dentro del límite (sin exceso) debe generar tag único
-    @Test
-    void purchaseTicket_withBaggage_shouldRegisterBaggageAndCalculateFee() throws Exception {
-        // 1. Comprar ticket con equipaje de 15kg (límite es 20kg, no hay exceso)
-        BaggageCreateRequest baggageRequest = new BaggageCreateRequest(new BigDecimal("15.0"), null);
-        TicketCreateRequest ticketRequest = new TicketCreateRequest(
-                tripId, passengerId, 1,
-                fromStopId, "Terminal Bogotá", 1,
-                toStopId, "Terminal Medellín", 2,
-                new BigDecimal("50000"), Ticket.PaymentMethod.CARD,
-                baggageRequest, "ADULT"
-        );
-
-        MvcResult purchaseResult = mvc.perform(post("/api/v1/trips/{tripId}/tickets", tripId)
-                        .header("Authorization", "Bearer " + clerkToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(ticketRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.baggage").exists())
-                .andExpect(jsonPath("$.baggage.weightKg").value(15.0))
-                .andExpect(jsonPath("$.baggage.excessFee").value(0.0))
-                .andExpect(jsonPath("$.baggage.tagCode").exists())
-                .andExpect(jsonPath("$.baggage.tagCode").value(org.hamcrest.Matchers.startsWith("BAG-")))
-                .andReturn();
-
-        // 2. Verificar que el equipaje se registró con tag único y sin cargo extra
-        TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(), TicketResponse.class);
-        assertThat(ticketResponse.baggage()).isNotNull();
-        assertThat(ticketResponse.baggage().weightKg()).isEqualByComparingTo(new BigDecimal("15.0"));
-        assertThat(ticketResponse.baggage().excessFee()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(ticketResponse.baggage().tagCode()).startsWith("BAG-");
-    }
-
-    // TEST: Equipaje con exceso de peso debe calcular cargo adicional automáticamente
-    @Test
-    void purchaseTicket_withExcessBaggage_shouldCalculateExcessFee() throws Exception {
-        // 1. Comprar ticket con 25kg de equipaje (límite 20kg = 5kg de exceso)
-        // Cargo esperado: 5kg × $2,500/kg = $12,500
-        BaggageCreateRequest baggageRequest = new BaggageCreateRequest(new BigDecimal("25.0"), null);
-        TicketCreateRequest ticketRequest = new TicketCreateRequest(
-                tripId, passengerId, 2,
-                fromStopId, "Terminal Bogotá", 1,
-                toStopId, "Terminal Medellín", 2,
-                new BigDecimal("50000"), Ticket.PaymentMethod.CARD,
-                baggageRequest, "ADULT"
-        );
-
-        MvcResult purchaseResult = mvc.perform(post("/api/v1/trips/{tripId}/tickets", tripId)
-                        .header("Authorization", "Bearer " + clerkToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(ticketRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.baggage").exists())
-                .andExpect(jsonPath("$.baggage.weightKg").value(25.0))
-                .andExpect(jsonPath("$.baggage.excessFee").value(12500.0))
-                .andExpect(jsonPath("$.baggage.tagCode").exists())
-                .andReturn();
-
-        // 2. Verificar que se calculó correctamente el cargo por exceso
-        TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(), TicketResponse.class);
-        assertThat(ticketResponse.baggage().excessFee()).isEqualByComparingTo(new BigDecimal("12500.0"));
-    }
-
-    // TEST: Cada equipaje debe tener un tag único (BAG-XXX) para identificación
-    @Test
-    void purchaseTicket_withMultipleBaggage_shouldGenerateUniqueTags() throws Exception {
-        // 1. Crear 3 tickets con equipaje y coleccionar sus tags
-        Set<String> tagCodes = new HashSet<>();
-        int numberOfTickets = 3;
-
-        for (int i = 1; i <= numberOfTickets; i++) {
-            BaggageCreateRequest baggageRequest = new BaggageCreateRequest(new BigDecimal("15.0"), null);
-            TicketCreateRequest ticketRequest = new TicketCreateRequest(
-                    tripId, passengerId, i,
-                    fromStopId, "Terminal Bogotá", 1,
-                    toStopId, "Terminal Medellín", 2,
-                    new BigDecimal("50000"), Ticket.PaymentMethod.CARD,
-                    baggageRequest, "ADULT"
-            );
-
-            MvcResult purchaseResult = mvc.perform(post("/api/v1/trips/{tripId}/tickets", tripId)
-                            .header("Authorization", "Bearer " + clerkToken)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(om.writeValueAsString(ticketRequest)))
-                    .andExpect(status().isCreated())
-                    .andReturn();
-
-            TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(), TicketResponse.class);
-            String tagCode = ticketResponse.baggage().tagCode();
-
-            // 2. Verificar que cada tag es único (no se repite)
-            assertThat(tagCodes).doesNotContain(tagCode);
-            tagCodes.add(tagCode);
-
-            // Validar formato
-            assertThat(tagCode).startsWith("BAG-");
+                // Verificar equipaje registrado con tag único, sin cargo extra
+                TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(),
+                                TicketResponse.class);
+                assertThat(ticketResponse.baggage()).isNotNull();
+                assertThat(ticketResponse.baggage().weightKg()).isEqualByComparingTo(new BigDecimal("15.0"));
+                assertThat(ticketResponse.baggage().excessFee()).isEqualByComparingTo(BigDecimal.ZERO);
+                assertThat(ticketResponse.baggage().tagCode()).startsWith("BAG-");
         }
 
-        assertThat(tagCodes.size()).isEqualTo(numberOfTickets);
-    }
+        // Verifica cálculo de cargo por exceso: 25kg (límite 20kg = 5kg exceso), cargo esperado 5kg × $2,500 = $12,500
+        @Test
+        void purchaseTicket_withExcessBaggage_shouldCalculateExcessFee() throws Exception {
+                // Comprar ticket con 25kg (5kg exceso)
+                BaggageCreateRequest baggageRequest = new BaggageCreateRequest(new BigDecimal("25.0"), null);
+                TicketCreateRequest ticketRequest = new TicketCreateRequest(
+                                tripId, passengerId, 2,
+                                fromStopId, "Terminal Bogotá", 1,
+                                toStopId, "Terminal Medellín", 2,
+                                new BigDecimal("50000"), Ticket.PaymentMethod.CARD,
+                                baggageRequest, "ADULT");
+
+                MvcResult purchaseResult = mvc.perform(post("/api/v1/trips/{tripId}/tickets", tripId)
+                                .header("Authorization", "Bearer " + clerkToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(om.writeValueAsString(ticketRequest)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.baggage").exists())
+                                .andExpect(jsonPath("$.baggage.weightKg").value(25.0))
+                                .andExpect(jsonPath("$.baggage.excessFee").value(12500.0))
+                                .andExpect(jsonPath("$.baggage.tagCode").exists())
+                                .andReturn();
+
+                // Verificar cargo por exceso calculado correctamente
+                TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(),
+                                TicketResponse.class);
+                assertThat(ticketResponse.baggage().excessFee()).isEqualByComparingTo(new BigDecimal("12500.0"));
+        }
+
+        // Verifica que cada equipaje tiene tag único BAG-XXX: crear 3 tickets con equipaje, todos deben tener tags diferentes
+        @Test
+        void purchaseTicket_withMultipleBaggage_shouldGenerateUniqueTags() throws Exception {
+                // Crear 3 tickets con equipaje y coleccionar tags
+                Set<String> tagCodes = new HashSet<>();
+                int numberOfTickets = 3;
+
+                for (int i = 1; i <= numberOfTickets; i++) {
+                        BaggageCreateRequest baggageRequest = new BaggageCreateRequest(new BigDecimal("15.0"), null);
+                        TicketCreateRequest ticketRequest = new TicketCreateRequest(
+                                        tripId, passengerId, i,
+                                        fromStopId, "Terminal Bogotá", 1,
+                                        toStopId, "Terminal Medellín", 2,
+                                        new BigDecimal("50000"), Ticket.PaymentMethod.CARD,
+                                        baggageRequest, "ADULT");
+
+                        MvcResult purchaseResult = mvc.perform(post("/api/v1/trips/{tripId}/tickets", tripId)
+                                        .header("Authorization", "Bearer " + clerkToken)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(om.writeValueAsString(ticketRequest)))
+                                        .andExpect(status().isCreated())
+                                        .andReturn();
+
+                        TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(),
+                                        TicketResponse.class);
+                        String tagCode = ticketResponse.baggage().tagCode();
+
+                        // Verificar tag único (no se repite)
+                        assertThat(tagCodes).doesNotContain(tagCode);
+                        tagCodes.add(tagCode);
+
+                        // Validar formato BAG-XXX
+                        assertThat(tagCode).startsWith("BAG-");
+                }
+
+                assertThat(tagCodes.size()).isEqualTo(numberOfTickets);
+        }
 }

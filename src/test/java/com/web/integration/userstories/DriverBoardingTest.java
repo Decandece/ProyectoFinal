@@ -76,6 +76,7 @@ class DriverBoardingTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    // Verifica validación exitosa de QR para el abordaje
     @Test
     @WithMockUser(roles = {"DRIVER", "DISPATCHER", "CLERK"})
     void validateQrCode_shouldReturnTicketDetails() throws Exception {
@@ -101,6 +102,7 @@ class DriverBoardingTest {
                 .andExpect(jsonPath("$.toStopName").value("Medellín"));
     }
 
+    // Verifica error cuando el QR escaneado no existe
     @Test
     @WithMockUser(roles = {"DRIVER", "DISPATCHER", "CLERK"})
     void validateQrCode_shouldFailWhenInvalid() throws Exception {
@@ -113,6 +115,7 @@ class DriverBoardingTest {
                 .andExpect(status().isNotFound());
     }
 
+    // Verifica que el conductor obtenga pasajeros por tramo
     @Test
     @WithMockUser(roles = {"DRIVER", "DISPATCHER"})
     void getPassengersBySegment_shouldReturnList() throws Exception {
@@ -148,6 +151,7 @@ class DriverBoardingTest {
                 .andExpect(jsonPath("$[1].seatNumber").value(15));
     }
 
+    // Verifica que el despachador pueda abrir el abordaje
     @Test
     @WithMockUser(roles = "DISPATCHER")
     void openBoarding_shouldChangeTripStatus() throws Exception {

@@ -75,7 +75,7 @@ class DispatcherOverbookingTest {
 
     @BeforeEach
     void setUp() {
-        // Mockear UserRepository para getCurrentUserId() en AdminController
+
         User adminUser = User.builder()
                 .id(1L)
                 .email("admin@test.com")
@@ -87,6 +87,7 @@ class DispatcherOverbookingTest {
         when(userRepository.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
     }
 
+    // Verifica que el admin consulte el porcentaje máximo de overbooking
     @Test
     @WithMockUser(username = "admin@test.com", roles = "ADMIN")
     void getConfig_shouldReturnOverbookingPercentage() throws Exception {
@@ -115,6 +116,7 @@ class DispatcherOverbookingTest {
                 .andExpect(jsonPath("$.overbookingMaxPercentage").exists());
     }
 
+    // Verifica compra dentro del límite permitido de overbooking
     @Test
     @WithMockUser(roles = "PASSENGER")
     void purchaseTicket_shouldRespectOverbookingLimit() throws Exception {
@@ -142,6 +144,7 @@ class DispatcherOverbookingTest {
                 .andExpect(jsonPath("$.status").value("SOLD"));
     }
 
+    // Verifica rechazo cuando se supera el límite configurado
     @Test
     @WithMockUser(roles = "PASSENGER")
     void purchaseTicket_shouldFailWhenLimitExceeded() throws Exception {

@@ -206,10 +206,10 @@ class DispatcherOccupancyIntegrationTest extends BaseIntegrationTest {
         passengerId = passengerLoginResponse.user().id();
     }
 
-    // TEST: Monitorear ocupación en tiempo real al comprar tickets
+    // Verifica monitoreo de ocupación en tiempo real: consultar ocupación inicial, comprar 5 tickets, verificar actualización
     @Test
     void monitorOccupancy_shouldUpdateInRealTime() throws Exception {
-        // 1. Consultar ocupación inicial (todos los asientos disponibles)
+        // Consultar ocupación inicial (todos disponibles)
         MvcResult initialSeatsResult = mvc.perform(get("/api/v1/trips/{tripId}/seats", tripId)
                         .param("fromStopId", fromStopId.toString())
                         .param("toStopId", toStopId.toString()))
@@ -226,7 +226,7 @@ class DispatcherOccupancyIntegrationTest extends BaseIntegrationTest {
                 .count();
         assertThat(initialOccupied).isEqualTo(0);
 
-        // 2. Comprar 5 tickets para ocupar asientos
+        // Comprar 5 tickets para ocupar asientos
         int ticketsToPurchase = 5;
         for (int i = 1; i <= ticketsToPurchase; i++) {
             TicketCreateRequest ticketRequest = new TicketCreateRequest(
@@ -244,7 +244,7 @@ class DispatcherOccupancyIntegrationTest extends BaseIntegrationTest {
                     .andExpect(status().isCreated());
         }
 
-        // 3. Verificar que la ocupación se actualizó en tiempo real (5 asientos ocupados)
+        // Verificar ocupación actualizada (5 asientos ocupados)
         MvcResult afterSeatsResult = mvc.perform(get("/api/v1/trips/{tripId}/seats", tripId)
                         .param("fromStopId", fromStopId.toString())
                         .param("toStopId", toStopId.toString()))
@@ -261,7 +261,7 @@ class DispatcherOccupancyIntegrationTest extends BaseIntegrationTest {
                 .count();
         assertThat(afterOccupied).isEqualTo(ticketsToPurchase);
 
-        // 4. Verificar que el detalle del viaje incluye % de ocupación correctamente
+        // Verificar detalle del viaje incluye % de ocupación
         MvcResult tripDetailResult = mvc.perform(get("/api/v1/trips/{tripId}", tripId)
                         .header("Authorization", "Bearer " + dispatcherToken))
                 .andExpect(status().isOk())
@@ -274,10 +274,10 @@ class DispatcherOccupancyIntegrationTest extends BaseIntegrationTest {
         assertThat(tripDetail.occupancyPercentage()).isLessThanOrEqualTo(100.0);
     }
 
-    // TEST: Consultar disponibilidad por tramo (segmento específico de ruta)
+    // Verifica disponibilidad por tramo: comprar 5 tickets para tramo Bogotá→Medellín, verificar solo 5 asientos ocupados en ese tramo
     @Test
     void getSeatAvailability_shouldShowOccupancyBySegment() throws Exception {
-        // 1. Comprar 5 tickets para el tramo Bogotá → Medellín
+        // Comprar 5 tickets para tramo Bogotá → Medellín
         for (int i = 1; i <= 5; i++) {
             TicketCreateRequest ticketRequest = new TicketCreateRequest(
                     tripId, passengerId, i,
@@ -294,7 +294,7 @@ class DispatcherOccupancyIntegrationTest extends BaseIntegrationTest {
                     .andExpect(status().isCreated());
         }
 
-        // 2. Verificar que solo 5 asientos están ocupados en ese tramo específico
+        // Verificar solo 5 asientos ocupados en ese tramo
         MvcResult seatsResult = mvc.perform(get("/api/v1/trips/{tripId}/seats", tripId)
                         .param("fromStopId", fromStopId.toString())
                         .param("toStopId", toStopId.toString()))

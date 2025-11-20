@@ -86,10 +86,10 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
 
         @BeforeEach
         void setUp() throws Exception {
-                // Limpiar datos (orden importante: primero dependientes, luego padres)
+
                 tripRepository.deleteAll();
                 seatRepository.deleteAll();
-                fareRuleRepository.deleteAll(); // Eliminar antes de rutas/paradas
+                fareRuleRepository.deleteAll();
                 stopRepository.deleteAll();
                 routeRepository.deleteAll();
                 busRepository.deleteAll();
@@ -222,21 +222,14 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                 passengerId = passengerLoginResponse.user().id();
         }
 
-        /**
-         * TEST DE INTEGRACIÓN 1: Verificar que los descuentos actualizados afectan las
-         * compras reales
-         * - Admin actualiza descuento de STUDENT del 20% al 25%
-         * - Pasajero compra ticket como STUDENT
-         * - El precio final debe reflejar el nuevo descuento del 25%
-         * - Involucra: Controller → Service → Repository → PostgreSQL real
-         */
+        // Verifica que cambios en descuentos afectan compras: Admin actualiza STUDENT
+        // 20%→25%, pasajero compra, precio refleja nuevo descuento
         @Test
         void updateDiscounts_shouldAffectTicketPurchases() throws Exception {
-                // PASO 1: Admin actualiza descuento de STUDENT a 25%
+                // Admin actualiza descuento STUDENT a 25%
                 ConfigUpdateRequest configUpdate = new ConfigUpdateRequest(
                                 null, null, null,
-                                java.util.Map.of("STUDENT", 25, "SENIOR", 15, "CHILD", 50), // Nuevo descuento STUDENT =
-                                                                                            // 25%
+                                java.util.Map.of("STUDENT", 25, "SENIOR", 15, "CHILD", 50),
                                 null, null, null, null,
                                 null, null, null, null, null,
                                 null, null, null, null);
@@ -248,7 +241,7 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.discountPercentages.STUDENT").value(25));
 
-                // PASO 2: Pasajero compra ticket como STUDENT con el nuevo descuento
+                // Pasajero compra ticket como STUDENT
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId, passengerId, 1,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -263,28 +256,20 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                                 .andExpect(status().isCreated())
                                 .andReturn();
 
-                // PASO 3: Verificar que el precio final refleja el descuento del 25%
+                // Verificar precio final con descuento 25%
                 TicketResponse ticketResponse = om.readValue(purchaseResult.getResponse().getContentAsString(),
                                 TicketResponse.class);
                 assertThat(ticketResponse.price()).isNotNull();
         }
 
-        /**
-         * TEST DE INTEGRACIÓN 2: Verificar que las políticas de reembolso actualizadas
-         * afectan cancelaciones
-         * - Admin cambia política de 48h de 80% a 90% reembolso
-         * - Pasajero compra ticket para viaje en 3 días
-         * - Pasajero cancela inmediatamente
-         * - Debe recibir 90% de reembolso (nueva política)
-         * - Involucra: Controller → Service → Repository → PostgreSQL real
-         */
+        // Verifica que cambios en política de reembolso afectan cancelaciones: Admin cambia 48h 80%→90%, pasajero compra y cancela, recibe 90%
         @Test
         void updateRefundPolicy_shouldAffectCancellations() throws Exception {
-                // PASO 1: Admin actualiza política de reembolso de 48h a 90%
+                // Admin actualiza política 48h a 90%
                 ConfigUpdateRequest configUpdate = new ConfigUpdateRequest(
                                 null, null, null, null, null, null,
                                 null, null,
-                                new BigDecimal("90"), // Nuevo: 90% reembolso si cancelas 48h antes
+                                new BigDecimal("90"),
                                 null, null, null, null,
                                 null, null, null, null);
 
@@ -295,7 +280,7 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.refundPercentage48Hours").value(90));
 
-                // PASO 2: Pasajero compra ticket para viaje en 3 días
+                // Pasajero compra ticket para viaje en 3 días
                 TicketCreateRequest ticketRequest = new TicketCreateRequest(
                                 tripId48h, passengerId, 1,
                                 fromStopId, "Terminal Bogotá", 1,
@@ -315,15 +300,14 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                 Long ticketId = ticketResponse.id();
                 BigDecimal actualTicketPrice = ticketResponse.price();
 
-                // PASO 3: Pasajero cancela el ticket inmediatamente (más de 48h antes del
-                // viaje)
+                // Pasajero cancela (más de 48h antes)
                 MvcResult cancelResult = mvc.perform(post("/api/v1/tickets/{id}/cancel", ticketId)
                                 .header("Authorization", "Bearer " + passengerToken)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
                                 .andReturn();
 
-                // PASO 4: Verificar que recibe 90% de reembolso según la nueva política
+                // Verificar reembolso 90% según nueva política
                 TicketCancelResponse cancelResponse = om.readValue(cancelResult.getResponse().getContentAsString(),
                                 TicketCancelResponse.class);
                 BigDecimal expectedRefund = actualTicketPrice
@@ -333,18 +317,10 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                 assertThat(cancelResponse.refundAmount()).isEqualByComparingTo(expectedRefund);
         }
 
-        /**
-         * TEST DE INTEGRACIÓN 3: Verificar que se puede obtener toda la configuración
-         * del sistema
-         * - Admin solicita configuración completa
-         * - Debe retornar todas las políticas: descuentos, reembolsos, precios,
-         * overbooking, etc.
-         * - Valida que no falte ninguna política crítica
-         * - Involucra: Controller → Service → Repository → PostgreSQL real
-         */
+        // Verifica que GET /config retorna todas las políticas: descuentos, reembolsos, precios, overbooking, etc.
         @Test
         void getConfig_shouldReturnAllPolicies() throws Exception {
-                // PASO 1: Admin solicita la configuración completa
+                // Admin solicita configuración completa
                 MvcResult configResult = mvc.perform(get("/api/v1/admin/config")
                                 .header("Authorization", "Bearer " + adminToken))
                                 .andExpect(status().isOk())
@@ -353,18 +329,18 @@ class AdminConfigIntegrationTest extends BaseIntegrationTest {
                 ConfigResponse config = om.readValue(configResult.getResponse().getContentAsString(),
                                 ConfigResponse.class);
 
-                // PASO 2: Verificar que todas las políticas están presentes y no son nulas
-                assertThat(config.holdDurationMinutes()).isNotNull(); // Duración de reserva
-                assertThat(config.discountPercentages()).isNotNull(); // Descuentos
-                assertThat(config.discountPercentages()).containsKey("STUDENT");// Descuento STUDENT existe
-                assertThat(config.refundPercentage48Hours()).isNotNull(); // Política 48h
-                assertThat(config.refundPercentage24Hours()).isNotNull(); // Política 24h
-                assertThat(config.refundPercentage12Hours()).isNotNull(); // Política 12h
-                assertThat(config.refundPercentage6Hours()).isNotNull(); // Política 6h
-                assertThat(config.refundPercentageLess6Hours()).isNotNull(); // Política <6h
-                assertThat(config.ticketBasePrice()).isNotNull(); // Precio base
-                assertThat(config.ticketPriceMultiplierPeakHours()).isNotNull();// Multiplicador hora pico
-                assertThat(config.overbookingMaxPercentage()).isNotNull(); // % overbooking máximo
-                assertThat(config.noShowFee()).isNotNull(); // Cargo por no-show
+                // Verificar todas las políticas presentes
+                assertThat(config.holdDurationMinutes()).isNotNull();
+                assertThat(config.discountPercentages()).isNotNull();
+                assertThat(config.discountPercentages()).containsKey("STUDENT");
+                assertThat(config.refundPercentage48Hours()).isNotNull();
+                assertThat(config.refundPercentage24Hours()).isNotNull();
+                assertThat(config.refundPercentage12Hours()).isNotNull();
+                assertThat(config.refundPercentage6Hours()).isNotNull();
+                assertThat(config.refundPercentageLess6Hours()).isNotNull();
+                assertThat(config.ticketBasePrice()).isNotNull();
+                assertThat(config.ticketPriceMultiplierPeakHours()).isNotNull();
+                assertThat(config.overbookingMaxPercentage()).isNotNull();
+                assertThat(config.noShowFee()).isNotNull();
         }
 }

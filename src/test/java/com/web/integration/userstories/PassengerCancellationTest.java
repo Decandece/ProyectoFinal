@@ -54,6 +54,7 @@ class PassengerCancellationTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    // Verifica reembolso del 80% cuando faltan al menos 48h
     @Test
     @WithMockUser(roles = "PASSENGER")
     void cancelTicket_48HoursBefore_shouldRefund80Percent() throws Exception {
@@ -76,6 +77,7 @@ class PassengerCancellationTest {
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
 
+    // Verifica reembolso del 50% para cancelaciones 24-48h
     @Test
     @WithMockUser(roles = "PASSENGER")
     void cancelTicket_24HoursBefore_shouldRefund50Percent() throws Exception {
@@ -96,6 +98,7 @@ class PassengerCancellationTest {
                 .andExpect(jsonPath("$.refundPercentage").value(50));
     }
 
+    // Verifica reembolso del 30% para cancelaciones 12-24h
     @Test
     @WithMockUser(roles = "PASSENGER")
     void cancelTicket_12HoursBefore_shouldRefund30Percent() throws Exception {
@@ -116,6 +119,7 @@ class PassengerCancellationTest {
                 .andExpect(jsonPath("$.refundPercentage").value(30));
     }
 
+    // Verifica reembolso del 10% cuando faltan entre 6 y 12h
     @Test
     @WithMockUser(roles = "PASSENGER")
     void cancelTicket_6HoursBefore_shouldRefund10Percent() throws Exception {
@@ -136,6 +140,7 @@ class PassengerCancellationTest {
                 .andExpect(jsonPath("$.refundPercentage").value(10));
     }
 
+    // Verifica reembolso 0% cuando faltan menos de 6h
     @Test
     @WithMockUser(roles = "PASSENGER")
     void cancelTicket_Less6Hours_shouldRefund0Percent() throws Exception {
@@ -156,6 +161,7 @@ class PassengerCancellationTest {
                 .andExpect(jsonPath("$.refundPercentage").value(0));
     }
 
+    // Verifica error al cancelar un ticket que ya está cancelado
     @Test
     @WithMockUser(roles = "PASSENGER")
     void cancelTicket_shouldFailWhenAlreadyCancelled() throws Exception {

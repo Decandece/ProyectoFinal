@@ -37,7 +37,7 @@ class AssignmentRepositoryTest extends BaseRepositoryTest {
 
         @BeforeEach
         void setUp() {
-                // La limpieza automática se ejecuta en BaseRepositoryTest antes de este método
+
                 
                 // Crear ruta
                 route = Route.builder()
