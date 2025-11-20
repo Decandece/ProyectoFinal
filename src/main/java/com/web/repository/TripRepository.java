@@ -24,7 +24,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     // Buscar viajes por estado
     List<Trip> findByStatus(Trip.TripStatus status);
 
-    // Buscar viajes que salen pronto (para validación de overbooking - Caso de Uso 3)
+    // Buscar viajes que salen pronto overbooking
     @Query("""
         SELECT t FROM Trip t
         WHERE t.status IN ('SCHEDULED', 'BOARDING')
@@ -85,7 +85,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     """)
     List<Trip> findUnassignedTrips(@Param("fromDate") LocalDate fromDate);
 
-    // Buscar viajes por conductor (para horario del conductor)
+    // Buscar viajes por conductor
     @Query("""
         SELECT t FROM Trip t
         JOIN t.assignment a
