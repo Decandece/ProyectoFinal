@@ -7,10 +7,9 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 public record RegisterRequest(
-    @NotBlank String name,
-    @Email String email,
-    @NotBlank String phone,
-    @NotBlank String password,
-    User.Role role  // Default PASSENGER en servicio
-) implements Serializable {}
-
+        @NotBlank String name,
+        @Email String email,
+        @NotBlank String phone,
+        @NotBlank String password,
+        User.Role role) implements Serializable {
+}

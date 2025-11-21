@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,8 +23,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
@@ -37,8 +35,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
@@ -50,8 +47,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
@@ -63,8 +59,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
@@ -76,8 +71,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
@@ -89,12 +83,12 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
-    // Maneja excepciones cuando las credenciales de autenticación son inválidas (401)
+    // Maneja excepciones cuando las credenciales de autenticación son inválidas
+    // (401)
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         ErrorResponse error = new ErrorResponse(
@@ -102,12 +96,11 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
-    // Maneja cualquier excepción de negocio genérica (catch-all para BusinessException)
+    // Maneja cualquier excepción de negocio genérica
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
         ErrorResponse error = new ErrorResponse(
@@ -115,8 +108,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
@@ -135,8 +127,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Error de validación en los datos enviados",
                 LocalDateTime.now(),
-                errors
-        );
+                errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -148,9 +139,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
                 "Error interno del servidor: " + ex.getMessage(),
                 LocalDateTime.now(),
-                null
-        );
+                null);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }
-
